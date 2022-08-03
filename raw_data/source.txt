@@ -1,0 +1,1 @@
+you can download the raw data from https://www.kaggle.com/datasets/tunguz/big-five-personality-test/download?datasetVersionNumber=1

@@ -1,0 +1,305 @@
+---
+title: "Reproducible CBS data sets using synthpop package"
+author: "Erik-Jan van Kesteren & Kyuri Park"
+date: "`r format(Sys.time(), '%B %d, %Y')`"
+output: 
+  html_document:
+    css: style.css
+    toc: true
+    toc_depth: 3
+    toc_float: true
+    number_sections: true 
+    theme: lumen
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, comment = NA)
+# library(tidyverse)
+# library(ggplot2)
+```
+
+<div class="head">
+We are trying to establish a procedure for exporting synthetic datasets based on real datasets at Statistics Netherlands ([CBS](https://www.cbs.nl/en-gb)). We want to use this synthetic data to make research reproducible. The general procedure is as follows: 
+
+1. Extract parameters of models based on the original data using the `synthpop` package.
+2. Export the parameters to Excel and store them in an xlsx file.
+3. Import the xlsx file from the CBS environment into your local device.
+4. Read in the excel file and load the parameters back in R.
+5. Generate synthetic data based on the model parameters.
+
+Here we will illustrate each step of the procedure using an example data set.
+</div>
+
+<hr>
+
+# Example dataset
+`big5_kag.csv` is a [Big Five personality traits](https://en.wikipedia.org/wiki/Big_Five_personality_traits) data set found on [kaggle](https://www.kaggle.com/datasets/tunguz/big-five-personality-test). It contains more than a million (1,015,342) answers collected from 2016 to 2018 through an interactive on-line personality test [Open Psychometrics](https://openpsychometrics.org/tests/IPIP-BFFM/).  
+It includes 50 questions (10 questions per personality dimension), which participants rate by themselves on a five-point-Likert scale where a *1* represents *complete disagreement*, a *3* for a *neutral* response and a *5* for *full agreement*.  
+
+<details>
+  <summary>***See the set of questions used***.</summary>
+  <br>
+**EXT = Extraversion**
+
+- EXT1 I am the life of the party.
+- EXT2 I don’t talk a lot.
+- EXT3 I feel comfortable around people.
+- EXT4 I keep in the background.
+- EXT5 I start conversations.
+- EXT6 I have little to say.
+- EXT7 I talk to a lot of different people at parties.
+- EXT8 I don’t like to draw attention to myself.
+- EXT9 I don’t mind being the center of attention.
+- EXT10 I am quiet around strangers.
+
+**EST = Emotional Stability**
+
+- EST1 I get stressed out easily.
+- EST2 I am relaxed most of the time.
+- EST3 I worry about things.
+- EST4 I seldom feel blue.
+- EST5 I am easily disturbed.
+- EST6 I get upset easily.
+- EST7 I change my mood a lot.
+- EST8 I have frequent mood swings.
+- EST9 I get irritated easily.
+- EST10 I often feel blue.
+
+**AGR = Agreeableness**
+
+- AGR1 I feel little concern for others.
+- AGR2 I am interested in people.
+- AGR3 I insult people.
+- AGR4 I sympathize with others’ feelings.
+- AGR5 I am not interested in other people’s problems.
+- AGR6 I have a soft heart.
+- AGR7 I am not really interested in others.
+- AGR8 I take time out for others.
+- AGR9 I feel others’ emotions.
+- AGR10 I make people feel at ease.
+
+**CSN = Conscientiousness**
+
+- CSN1 I am always prepared.
+- CSN2 I leave my belongings around.
+- CSN3 I pay attention to details.
+- CSN4 I make a mess of things.
+- CSN5 I get chores done right away.
+- CSN6 I often forget to put things back in their proper place.
+- CSN7 I like order.
+- CSN8 I shirk my duties.
+- CSN9 I follow a schedule.
+- CSN10 I am exacting in my work.
+
+**OPN = Openness to new experiences**
+
+- OPN1 I have a rich vocabulary.
+- OPN2 I have difficulty understanding abstract ideas.
+- OPN3 I have a vivid imagination.
+- OPN4 I am not interested in abstract ideas.
+- OPN5 I have excellent ideas.
+- OPN6 I do not have a good imagination.
+- OPN7 I am quick to understand things.
+- OPN8 I use difficult words.
+- OPN9 I spend time reflecting on things.
+- OPN10 I am full of ideas.
+
+</details> 
+<br>
+
+# Preparation
+
+First, we need to load the following packages and import the functions (i.e., `get_par_addlog`, `read_sheets`, `gen_syn_addlog`, `num_to_roman`) from the `implement_logistic.R.` file in order to generate synthetic data.
+
+```{r, message=FALSE}
+library(writexl)
+library(readxl)
+library(synthpop)
+library(stringr)
+library(dplyr)
+
+library(lavaan)
+library(lavaanPlot)
+
+## import the functions
+# source("synthfunc_cleaned.R")
+source("implement_logistic.R")
+```
+
+
+Then, we read the data into our work environment and prepare it for the subsequent analysis.
+We will select the personality question variables (*EXT1*,...,*OPN10*) only and remove incomplete cases . Some values are stored in character, so we will convert them into integer. Several question items are contra-indicative, meaning that the rating scale runs in the opposite direction. Therefore, we need to reverse-recode them such that stronger agreement indicates a higher score on the corresponding personality dimension. Lastly, for the ease of computation, here we will analyze only a subset of the dataset (e.g., 100,000). 
+
+
+```{r load data, message=FALSE, cache=TRUE}
+## load data
+big5_kag <- readr::read_delim("big5_kag.csv", 
+                        "\t", escape_double = FALSE, trim_ws = TRUE) 
+
+## prepare data
+big5 <- big5_kag %>%
+  # only select relevant variables
+  dplyr::select(EXT1:OPN10) %>%
+  # convert the char --to--> int
+  mutate_if(is.character, as.integer) %>% 
+  # filter incomplete cases
+  na.omit() %>%
+  # create subsample (my arbitrary choice: 100,000)
+  sample_n(1e5) %>% 
+  # recode reverse coded items
+  mutate_at(c("EXT2","EXT4","EXT6","EXT8","EXT10",
+              'EST1','EST3',"EST5", "EST7", "EST8", "EST9", "EST10", 
+              "AGR1","AGR3","AGR5","AGR7",
+              "CSN2","CSN4","CSN6","CSN8",
+              "OPN2","OPN4","OPN6"), 
+            list(~ recode(., `1`= 5L, `2`= 4L, `4`= 2L, `5`= 1L, .default = 3L))) %>% 
+  suppressWarnings()
+```
+
+Let's take a quick look at the data summary.
+
+```{r, eval=FALSE}
+## data summary
+skimr::skim(big5)
+```
+
+<details>
+  <summary>***Data summary***</summary>
+```{r, echo=FALSE, eval=TRUE}
+skimr::skim(big5)
+```
+</details> 
+<br>
+
+# Extract model parameters
+As the first step to generate synthetic data, we extract the model parameters.  
+- Note that numbers are not allowed to be in the variable names. The variable names can only contain alphabetical characters. 
+Here I choose to change the numbers to *Roman numerals*(using `num_to_roman` function). You are free to switch them to anything sensible to you though, as long as they consist only of characters.  
+- Once the variable names are sorted, get the `synds` object using using `synthpop` package. Currently, we only support method "norm" (for normally-distributed continuous variables) and "logreg"(for binary variables). Make sure you set `models=TRUE` when calling `syn` function.  
+- Next, use `get_par_addlog` function, which takes the data and `synds` object as arguments to extract model parameters. 
+
+```{r cache=TRUE, warning=FALSE, message=FALSE}
+## convert the number in the variable names to Roman numeral
+colnames(big5) <- num_to_roman(big5)
+## get the synds object
+synds <- synthpop::syn(big5, method="norm", models=TRUE)
+## extract parameters and store them in "model_par"
+model_par <- get_par_addlog(big5, synds)
+```
+
+
+# Export to Excel / Import from CBS
+We export the model parameters to Excel using `writexl` package: `write_xlsx(list of dataframes, filepath)`. Then, you would be able to import the xlsx file from the CBS environment and store it in your local device.
+
+```{r}
+## export to Excel
+write_xlsx(model_par, "big5.xlsx")
+```
+
+# Read xlsx file into R
+We read in the model parameters from xlsx file using `read_sheets` function: `read_sheets(filepath)`, and store them in a list of dataframes.
+```{r}
+## read in the parameters
+parameters <- read_sheets("big5.xlsx")
+```
+
+# Generate synthetic data
+We can generate the synthetic data using `gen_syn_addlog` function: `gen_syn_addlog(list of parameters, n = sample size)`.
+```{r}
+## generate synthetic data
+syndat <- gen_syn_addlog(parameters, n = nrow(big5))
+```
+```{r, eval=FALSE}
+## check the synthetic data
+head(syndat)
+```
+<details>
+  <summary>***Check the synthetic data.***</summary>
+```{r, echo=FALSE, eval=TRUE}
+head(syndat)
+```
+</details> 
+<br>
+
+
+# Run analysis on synthetic data 
+Here, we run (confirmatory) factor analysis on the synthesized Big5 personality data.
+Later on, we run the same analysis on the original data and compare the results to see if both data sets lead to more or less the same conclusion.
+```{r}
+## lavaan model string preparation 
+# function that creates string of model formula
+create_str <- function(data, abbrev) {
+  # it takes a certain abbreviation to select all matching variables,
+  # collapses them into one string, and adds '+' signs in between.
+  x <- data %>% 
+    dplyr::select(starts_with(abbrev)) %>% 
+    colnames() %>% noquote() %>% 
+    paste(collapse = " + ")
+  return(x)
+}
+# storage for strings
+str_matrix <- matrix(NA, 1, 5) 
+# assign the Big5 item names to column names
+colnames(str_matrix) <- c("EXT", "AGR", "EST", "OPN", "CSN") 
+for (i in 1:ncol(str_matrix)){
+  str_matrix[,i] <- create_str(big5, abbrev = colnames(str_matrix)[i])
+}
+# store the model formulae
+mod_string <- str_glue(
+  "{colnames(str_matrix)[1]} =~ {str_matrix[,1]} 
+  {colnames(str_matrix)[2]} =~ {str_matrix[,2]}
+  {colnames(str_matrix)[3]} =~ {str_matrix[,3]}
+  {colnames(str_matrix)[4]} =~ {str_matrix[,4]}
+  {colnames(str_matrix)[5]} =~ {str_matrix[,5]}"
+)
+
+## run CFA
+CFA_model <- mod_string
+syn_CFA <- cfa(model = CFA_model, data = syndat, std.lv=TRUE)
+# assess the fit indices
+fitMeasures(syn_CFA, fit.measures = c("cfi","srmr", "rmsea"))
+```
+<details>
+  <summary>***Check the CFA (on synthetic data) results in detail.***</summary>
+```{r, echo=FALSE, eval=TRUE}
+summary(syn_CFA, fit.measures = TRUE, standardized = TRUE)
+```
+</details> 
+<br>
+
+```{r}
+## plot the CFA model on synthetic data
+lavaanPlot(model = syn_CFA, node_options = list(shape = "box", fontname = "Helvetica"), edge_options = list(color = "grey"), coefs = TRUE, graph_options = list(layout = "circo"))
+
+```
+
+# Run analysis on original data
+```{r}
+original_CFA <- cfa(model = CFA_model, data = big5, std.lv=TRUE)
+# assess the fit indices
+fitMeasures(original_CFA, fit.measures = c("cfi","srmr", "rmsea"))
+```
+<details>
+  <summary>***Check the CFA (on original data) results in detail.***</summary>
+```{r, echo=FALSE, eval=TRUE}
+ summary(original_CFA, fit.measures = TRUE, standardized = TRUE)
+```
+</details> 
+<br>
+
+```{r}
+## plot the CFA model on original data
+lavaanPlot(model = original_CFA, node_options = list(shape = "box", fontname = "Helvetica"), edge_options = list(color = "grey"), coefs = TRUE, graph_options = list(layout = "circo"))
+
+```
+
+It is observed that the result of factor analysis on the synthetic closely coincide with the result of analysis on the original data.
+
+
+
+<hr>
+***TO DO:***  
+- introduction
+- explain the CFA results ?  
+- overall conclusion ?
+
