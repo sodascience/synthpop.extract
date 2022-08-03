@@ -37,3 +37,7 @@ vignettes/*.pdf
 
 # R Environment Variables
 .Renviron
+
+# Don't upload anything from the raw_data folder
+raw_data/*
+!raw_data/source.txt
