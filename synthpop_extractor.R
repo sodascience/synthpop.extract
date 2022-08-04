@@ -7,7 +7,7 @@
 #' The synds object should be run with a parametric method and with the argument `models = TRUE`
 #' 
 #' @return a list of data frames
-get_par_addlog <- function(df, synds) {
+synp_get_param <- function(df, synds) {
   # check that only parametric methods were used
   allowed_methods <- c("norm", "logreg") # "logreg" added 
   # TODO: far future: "polyreg", "polyr")
@@ -80,7 +80,7 @@ get_par_addlog <- function(df, synds) {
 #' @param ... arguments passed to `readxl::read_xlsx()`
 #'
 #' @return a list of data frames
-read_sheets <- function(path, ...) {
+synp_read_sheets <- function(path, ...) {
   # get the sheet names
   col_nm <- readxl::excel_sheets(path) 
   
@@ -99,12 +99,12 @@ read_sheets <- function(path, ...) {
 #' @param n sample size (default = 1000)
 #' 
 #' @return a data frame
-gen_syn_addlog <- function(par_list, n = 1000) {
+synp_gen_syndat <- function(par_list, n = 1000) {
   # extract name of methods
   col_nm <- methods <- c()
   for (i in 1:length(par_list)){
-    col_nm[i] <- str_trim(strsplit(names(par_list), split="\\|")[[i]][1])
-    methods[i] <- str_trim(strsplit(names(par_list), split="\\|")[[i]][2])
+    col_nm[i] <- stringr::str_trim(strsplit(names(par_list), split="\\|")[[i]][1])
+    methods[i] <- stringr::str_trim(strsplit(names(par_list), split="\\|")[[i]][2])
   }
   # with the first variable, create a dataframe to store syndat
   cur_df <- par_list[[1]]
@@ -150,22 +150,3 @@ gen_syn_addlog <- function(par_list, n = 1000) {
   }
   return(syndat)
 }
-
-
-
-#' Convert numbers to roman numerals in variable names
-#' 
-#' @param df the original data frame
-#' 
-#' @return converted version of column name vector
-num_to_roman <- function(df){
-  ori_colnames <- colnames(df)
-  new_colnames <- c()
-  
-  for ( i in 1: length(ori_colnames)){
-    roman <- as.roman(sapply(ori_colnames, function(x) str_extract_all(x, "\\d+")[[1]]))
-    new_colnames[i] <- gsub("([0-9]+)", paste0("_",roman[i]), ori_colnames[i])
-  }
-  return(new_colnames)
-}
-
