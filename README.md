@@ -28,19 +28,9 @@ guiding how to utilize the code.
     For illustrative purposes, the results of factor analyses based on
     the original dataset and synthetic dataset are compared.
 
-<figure>
-<img src="/img/CFA_originaldata.png" style="width:70.0%"
-alt="Factor analysis based on original data" />
-<figcaption aria-hidden="true">Factor analysis based on original
-data</figcaption>
-</figure>
+![Factor analysis based on original data](/img/CFA_originaldata.png)
 
-<figure>
-<img src="/img/CFA_syndata.png" style="width:70.0%"
-alt="Factor analysis based on synthetic data" />
-<figcaption aria-hidden="true">Factor analysis based on synthetic
-data</figcaption>
-</figure>
+![Factor analysis based on synthetic data](/img/CFA_syndata.png)
 
 ## Contact
 
