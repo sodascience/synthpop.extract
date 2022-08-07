@@ -37,8 +37,8 @@ data</figcaption>
 
 <figure>
 <img src="/img/CFA_syndata.png" style="width:70.0%"
-alt="Factor analysis based on original data" />
-<figcaption aria-hidden="true">Factor analysis based on original
+alt="Factor analysis based on synthetic data" />
+<figcaption aria-hidden="true">Factor analysis based on synthetic
 data</figcaption>
 </figure>
 
