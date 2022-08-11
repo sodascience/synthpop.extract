@@ -9,11 +9,11 @@
 <meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
 
 
-<meta name="author" content="Erik-Jan van Kesteren &amp; Kyuri Park" />
+<meta name="author" content="Kyuri Park &amp; Erik-Jan van Kesteren" />
 
-<meta name="date" content="2022-08-04" />
+<meta name="date" content="2022-08-11" />
 
-<title>Reproducible CBS data sets using synthpop package</title>
+<title>Reproducible CBS data sets using the synthpop package</title>
 
 <script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
 // be compatible with the behavior of Pandoc < 2.8).
@@ -2791,7 +2791,6 @@ if (window.hljs) {
 
 
 
-
 <style type="text/css">#header {
 padding: 20px;
 text-align: center;
@@ -2842,9 +2841,6 @@ button.code-folding-btn:focus {
 }
 summary {
   display: list-item;
-}
-details > summary > p:only-child {
-  display: inline;
 }
 pre code {
   padding: 0;
@@ -3001,10 +2997,10 @@ div.tocify {
 
 
 
-<h1 class="title toc-ignore">Reproducible CBS data sets using synthpop
-package</h1>
-<h4 class="author">Erik-Jan van Kesteren &amp; Kyuri Park</h4>
-<h4 class="date">August 04, 2022</h4>
+<h1 class="title toc-ignore">Reproducible CBS data sets using the
+synthpop package</h1>
+<h4 class="author">Kyuri Park &amp; Erik-Jan van Kesteren</h4>
+<h4 class="date">August 11, 2022</h4>
 
 </div>
 
@@ -3027,8 +3023,26 @@ device.</li>
 data set.</p>
 </div>
 <hr>
-<div id="example-dataset" class="section level1" number="1">
-<h1><span class="header-section-number">1</span> Example dataset</h1>
+<div id="preparation" class="section level1" number="1">
+<h1><span class="header-section-number">1</span> Preparation</h1>
+<p>First, we need to load the following packages and import the
+functions (i.e., <code>synp_get_param</code>,
+<code>synp_read_sheets</code>, <code>synp_gen_syndat</code>) from the
+<code>synthpop_extractor.R</code> file.</p>
+<pre class="r"><code>## load packages
+library(tidyverse)
+library(skimr)
+library(readxl)
+library(writexl)
+library(synthpop)
+library(lavaan)
+library(lavaanPlot)
+
+## import the functions
+source(&quot;synthpop_extractor.R&quot;)</code></pre>
+</div>
+<div id="example-dataset" class="section level1" number="2">
+<h1><span class="header-section-number">2</span> Example dataset</h1>
 <p><code>big5_kag.csv</code> is a <a href="https://en.wikipedia.org/wiki/Big_Five_personality_traits">Big
 Five personality traits</a> data set found on <a href="https://www.kaggle.com/datasets/tunguz/big-five-personality-test">kaggle</a>.
 It contains more than a million (1,015,342) answers collected from 2016
@@ -3090,7 +3104,7 @@ in <code>process_rawdata.R</code> file.</p>
 big5 &lt;- readRDS(&quot;./data/big5.RDS&quot;)</code></pre>
 <p>Let’s take a quick look at the data summary.</p>
 <pre class="r"><code>## data summary
-skimr::skim(big5)</code></pre>
+skim(big5)</code></pre>
 <details>
 <summary>
 <strong><em>See the data summary.</em></strong>
@@ -3135,17 +3149,17 @@ skimr::skim(big5)</code></pre>
 <p><strong>Variable type: numeric</strong></p>
 <table>
 <colgroup>
-<col width="18%" />
-<col width="13%" />
-<col width="18%" />
-<col width="6%" />
-<col width="6%" />
+<col width="12%" />
+<col width="9%" />
+<col width="12%" />
 <col width="4%" />
-<col width="5%" />
-<col width="5%" />
-<col width="5%" />
-<col width="6%" />
-<col width="8%" />
+<col width="4%" />
+<col width="2%" />
+<col width="3%" />
+<col width="3%" />
+<col width="3%" />
+<col width="4%" />
+<col width="37%" />
 </colgroup>
 <thead>
 <tr class="header">
@@ -3493,21 +3507,6 @@ skimr::skim(big5)</code></pre>
 </details>
 <p><br></p>
 </div>
-<div id="preparation" class="section level1" number="2">
-<h1><span class="header-section-number">2</span> Preparation</h1>
-<p>First, we need to load the following packages and import the
-functions (i.e., <code>synp_get_param</code>,
-<code>synp_read_sheets</code>, <code>synp_gen_syndat</code>) from the
-<code>synthpop_extractor.R</code> file.</p>
-<pre class="r"><code>## load packages
-library(writexl)
-library(synthpop)
-library(lavaan)
-library(lavaanPlot)
-
-## import the functions
-source(&quot;synthpop_extractor.R&quot;)</code></pre>
-</div>
 <div id="extract-model-parameters" class="section level1" number="3">
 <h1><span class="header-section-number">3</span> Extract model
 parameters</h1>
@@ -3548,13 +3547,13 @@ Synthesis
 <pre class="r"><code>## extract parameters and store them as &quot;model_par&quot;
 model_par &lt;- synp_get_param(big5, synds)</code></pre>
 </div>
-<div id="export-to-excel-import-from-cbs" class="section level1" number="4">
-<h1><span class="header-section-number">4</span> Export to Excel /
-Import from CBS</h1>
+<div id="save-to-excel-export-from-cbs" class="section level1" number="4">
+<h1><span class="header-section-number">4</span> Save to Excel &amp;
+Export from CBS</h1>
 <p>We export the model parameters to Excel using <code>writexl</code>
 package: <code>write_xlsx(list of dataframes, filepath)</code>. Then,
-you would be able to import the xlsx file from the CBS environment and
-store it in your local device.</p>
+you would be able to export the xlsx file from the CBS environment
+through the regular output check and store it on your local device.</p>
 <pre class="r"><code>## export to Excel
 write_xlsx(model_par, &quot;big5.xlsx&quot;)</code></pre>
 </div>
@@ -3581,34 +3580,34 @@ head(syndat)</code></pre>
 <summary>
 <strong><em>Check the synthetic data.</em></strong>
 </summary>
-<pre><code>     EXT_I   EXT_II  EXT_III   EXT_IV    EXT_V     EST_I   EST_II     EST_III
-1 2.357662 5.534930 5.299042 3.393188 5.277309 2.5331227 4.105795  1.21765847
-2 2.457048 4.292018 3.103234 2.267400 2.622544 2.8062914 2.493696 -0.08605096
-3 1.119710 1.775700 5.057374 2.920185 2.798694 2.9441617 4.546746  2.19569837
-4 2.011913 3.471352 2.962012 3.413090 2.575012 0.6226916 2.358257  1.96840845
-5 3.210637 3.176983 4.567551 2.241575 5.512051 1.9846468 5.121886  1.07343043
-6 3.684712 6.143638 3.316350 3.102502 4.926369 2.8332973 2.261765  1.80627026
-    EST_IV    EST_V    AGR_I   AGR_II  AGR_III   AGR_IV    AGR_V    CSN_I
-1 2.414951 2.123847 4.515868 3.982853 3.368864 3.757097 2.476840 2.542868
-2 3.788761 4.708629 4.800076 4.789185 4.285476 3.512203 3.711984 2.603290
-3 4.679743 3.531338 4.572098 2.918702 3.255699 4.487572 4.273377 3.375731
-4 3.388486 3.124144 3.204495 2.629998 3.363081 2.291644 2.572516 2.496105
-5 3.701986 4.555228 4.700898 5.299648 3.231660 6.914157 6.605313 2.961441
-6 2.240801 4.646527 4.469730 5.943077 3.985327 4.596366 5.093549 1.050329
-     CSN_II  CSN_III   CSN_IV     CSN_V    OPN_I   OPN_II  OPN_III   OPN_IV
-1 3.3808849 3.598188 3.074052 0.5140953 3.685056 3.214720 4.881465 4.060328
-2 1.6334121 5.397468 2.810763 1.9005046 4.256720 4.029809 2.646170 3.719524
-3 3.8325353 5.217975 5.017795 5.3612306 4.534498 4.288720 2.858577 5.133262
-4 3.6469665 2.703990 2.791837 3.1312868 4.233718 4.997628 3.993569 3.021503
-5 0.8697289 5.338771 1.379114 5.0886407 4.498279 3.425269 3.009861 2.151635
-6 3.6166078 2.474117 2.021234 0.2972541 4.322010 3.159047 4.210610 4.636461
-     OPN_V
-1 4.053000
-2 3.464842
-3 2.362138
-4 3.183359
-5 4.560168
-6 4.562235</code></pre>
+<pre><code>       EXT_I     EXT_II  EXT_III    EXT_IV     EXT_V    EST_I   EST_II
+1 1.87257829  3.7167952 4.668687 3.0306794 3.9132042 3.691024 5.320570
+2 0.06829362  1.1089181 1.717700 2.0175799 0.7980846 3.346783 2.623079
+3 3.18405229  4.1830929 4.462567 5.4888323 4.0448206 2.726745 4.506192
+4 1.32535679  2.8293457 0.994943 3.0348264 4.0683193 2.351272 2.635679
+5 2.35715468 -0.2693569 3.048855 0.8256115 4.1231517 4.340402 5.156813
+6 3.05218539  4.1007227 4.022406 2.7484498 3.9832705 3.991956 5.793566
+    EST_III    EST_IV    EST_V    AGR_I   AGR_II  AGR_III   AGR_IV    AGR_V
+1 1.6734486 2.4782527 2.640687 3.467946 3.857052 4.642362 5.227541 5.349770
+2 3.4215372 2.3513897 3.933699 2.792848 2.228490 4.664547 3.088734 4.184185
+3 0.6733235 3.4289632 3.374175 6.840878 3.970233 3.357300 4.308526 4.597385
+4 1.6204695 0.7761912 1.483069 3.071837 2.596404 3.777269 2.117304 1.480058
+5 3.6727894 3.4477091 1.568137 2.988274 2.859141 3.391776 4.964074 4.672692
+6 1.7606578 4.8985834 3.178045 2.713753 3.539344 2.501292 4.822019 4.932111
+     CSN_I   CSN_II  CSN_III   CSN_IV    CSN_V    OPN_I   OPN_II  OPN_III
+1 2.631819 3.581923 4.512671 2.915904 1.504732 3.599976 3.732573 4.939267
+2 3.271494 3.211449 2.687601 4.239348 2.791344 4.514205 5.873897 4.002945
+3 1.866964 2.035981 4.263942 4.765430 2.966250 4.284590 3.746318 5.279031
+4 2.023762 4.152958 4.704842 2.467335 3.356945 3.369726 4.525216 4.083379
+5 2.704643 2.529358 4.765148 4.725093 4.231699 3.101060 4.352138 3.373412
+6 1.948576 2.148180 3.808945 2.210700 3.559796 1.834975 4.747015 2.811164
+    OPN_IV    OPN_V
+1 3.964627 5.440333
+2 4.648781 4.483138
+3 4.093274 4.911475
+4 4.217064 2.966201
+5 3.720653 3.733345
+6 3.782929 2.067550</code></pre>
 </details>
 <p><br></p>
 </div>
@@ -3632,51 +3631,51 @@ syn_CFA &lt;- cfa(model = CFA_model, data = syndat, std.lv=TRUE)
 ## assess the fit indices
 fitMeasures(syn_CFA, fit.measures = c(&quot;cfi&quot;,&quot;srmr&quot;, &quot;rmsea&quot;))</code></pre>
 <pre><code>  cfi  srmr rmsea 
-0.811 0.066 0.067 </code></pre>
+0.814 0.066 0.066 </code></pre>
 <details>
 <summary>
 <strong><em>Check the CFA (on synthetic data) results in
 detail.</em></strong>
 </summary>
-<pre><code>lavaan 0.6-12 ended normally after 19 iterations
+<pre><code>lavaan 0.6-10 ended normally after 18 iterations
 
   Estimator                                         ML
   Optimization method                           NLMINB
   Number of model parameters                        60
-
+                                                      
   Number of observations                        100000
-
+                                                      
 Model Test User Model:
                                                         
-  Test statistic                              117822.039
+  Test statistic                              116119.353
   Degrees of freedom                                 265
   P-value (Chi-square)                             0.000
 
 Model Test Baseline Model:
 
-  Test statistic                            622261.846
+  Test statistic                            621511.331
   Degrees of freedom                               300
   P-value                                        0.000
 
 User Model versus Baseline Model:
 
-  Comparative Fit Index (CFI)                    0.811
-  Tucker-Lewis Index (TLI)                       0.786
+  Comparative Fit Index (CFI)                    0.814
+  Tucker-Lewis Index (TLI)                       0.789
 
 Loglikelihood and Information Criteria:
 
-  Loglikelihood user model (H0)           -3741677.479
-  Loglikelihood unrestricted model (H1)   -3682766.459
+  Loglikelihood user model (H0)           -3741122.237
+  Loglikelihood unrestricted model (H1)   -3683062.561
                                                       
-  Akaike (AIC)                             7483474.958
-  Bayesian (BIC)                           7484045.734
-  Sample-size adjusted Bayesian (BIC)      7483855.052
+  Akaike (AIC)                             7482364.474
+  Bayesian (BIC)                           7482935.250
+  Sample-size adjusted Bayesian (BIC)      7482744.568
 
 Root Mean Square Error of Approximation:
 
-  RMSEA                                          0.067
+  RMSEA                                          0.066
   90 Percent confidence interval - lower         0.066
-  90 Percent confidence interval - upper         0.067
+  90 Percent confidence interval - upper         0.066
   P-value RMSEA &lt;= 0.05                          0.000
 
 Standardized Root Mean Square Residual:
@@ -3692,80 +3691,80 @@ Parameter Estimates:
 Latent Variables:
                    Estimate  Std.Err  z-value  P(&gt;|z|)   Std.lv  Std.all
   EXTRA =~                                                              
-    EXT_I             0.843    0.004  218.572    0.000    0.843    0.664
-    EXT_II            0.903    0.004  230.056    0.000    0.903    0.691
-    EXT_III           0.850    0.004  234.034    0.000    0.850    0.700
-    EXT_IV            0.859    0.004  238.966    0.000    0.859    0.712
-    EXT_V             0.948    0.004  253.459    0.000    0.948    0.744
+    EXT_I             0.834    0.004  217.331    0.000    0.834    0.661
+    EXT_II            0.897    0.004  228.448    0.000    0.897    0.688
+    EXT_III           0.850    0.004  233.432    0.000    0.850    0.699
+    EXT_IV            0.860    0.004  239.547    0.000    0.860    0.713
+    EXT_V             0.948    0.004  253.350    0.000    0.948    0.744
   AGREE =~                                                              
-    AGR_I             0.666    0.005  146.128    0.000    0.666    0.500
-    AGR_II            0.675    0.004  177.279    0.000    0.675    0.594
-    AGR_III           0.428    0.004   95.448    0.000    0.428    0.338
-    AGR_IV            0.789    0.004  213.215    0.000    0.789    0.700
-    AGR_V             0.798    0.004  209.032    0.000    0.798    0.687
+    AGR_I             0.672    0.005  147.195    0.000    0.672    0.504
+    AGR_II            0.670    0.004  175.672    0.000    0.670    0.590
+    AGR_III           0.441    0.005   97.873    0.000    0.441    0.346
+    AGR_IV            0.786    0.004  212.431    0.000    0.786    0.699
+    AGR_V             0.794    0.004  207.928    0.000    0.794    0.685
   EMO =~                                                                
-    EST_I             1.073    0.004  264.475    0.000    1.073    0.818
-    EST_II            0.729    0.004  183.018    0.000    0.729    0.592
-    EST_III           0.782    0.004  219.973    0.000    0.782    0.695
-    EST_IV            0.438    0.004  102.422    0.000    0.438    0.351
-    EST_V             0.564    0.004  134.085    0.000    0.564    0.450
+    EST_I             1.089    0.004  267.549    0.000    1.089    0.823
+    EST_II            0.723    0.004  182.633    0.000    0.723    0.589
+    EST_III           0.794    0.004  222.732    0.000    0.794    0.701
+    EST_IV            0.432    0.004  101.242    0.000    0.432    0.346
+    EST_V             0.565    0.004  134.522    0.000    0.565    0.450
   OPEN =~                                                               
-    OPN_I             0.522    0.004  126.882    0.000    0.522    0.451
-    OPN_II            0.801    0.004  206.924    0.000    0.801    0.729
-    OPN_III           0.439    0.004  111.468    0.000    0.439    0.400
-    OPN_IV            0.704    0.004  187.121    0.000    0.704    0.656
-    OPN_V             0.432    0.004  121.865    0.000    0.432    0.435
+    OPN_I             0.534    0.004  129.960    0.000    0.534    0.461
+    OPN_II            0.801    0.004  207.381    0.000    0.801    0.728
+    OPN_III           0.435    0.004  110.774    0.000    0.435    0.397
+    OPN_IV            0.710    0.004  189.144    0.000    0.710    0.661
+    OPN_V             0.429    0.004  121.976    0.000    0.429    0.435
   CON =~                                                                
-    CSN_I             0.684    0.004  167.839    0.000    0.684    0.583
-    CSN_II            0.797    0.005  167.358    0.000    0.797    0.581
-    CSN_III           0.357    0.004   94.109    0.000    0.357    0.341
-    CSN_IV            0.808    0.004  190.626    0.000    0.808    0.656
-    CSN_V             0.787    0.004  178.540    0.000    0.787    0.617
+    CSN_I             0.685    0.004  167.865    0.000    0.685    0.582
+    CSN_II            0.805    0.005  169.407    0.000    0.805    0.587
+    CSN_III           0.355    0.004   93.907    0.000    0.355    0.340
+    CSN_IV            0.813    0.004  191.731    0.000    0.813    0.659
+    CSN_V             0.777    0.004  176.686    0.000    0.777    0.610
 
 Covariances:
                    Estimate  Std.Err  z-value  P(&gt;|z|)   Std.lv  Std.all
   EXTRA ~~                                                              
-    AGREE             0.387    0.004  108.241    0.000    0.387    0.387
-    EMO               0.256    0.004   69.383    0.000    0.256    0.256
-    OPEN              0.129    0.004   32.052    0.000    0.129    0.129
-    CON               0.133    0.004   32.901    0.000    0.133    0.133
+    AGREE             0.378    0.004  104.975    0.000    0.378    0.378
+    EMO               0.252    0.004   68.438    0.000    0.252    0.252
+    OPEN              0.128    0.004   31.762    0.000    0.128    0.128
+    CON               0.142    0.004   35.099    0.000    0.142    0.142
   AGREE ~~                                                              
-    EMO              -0.078    0.004  -19.034    0.000   -0.078   -0.078
-    OPEN              0.187    0.004   44.302    0.000    0.187    0.187
-    CON               0.114    0.004   26.490    0.000    0.114    0.114
+    EMO              -0.070    0.004  -17.065    0.000   -0.070   -0.070
+    OPEN              0.189    0.004   44.879    0.000    0.189    0.189
+    CON               0.124    0.004   28.759    0.000    0.124    0.124
   EMO ~~                                                                
-    OPEN              0.182    0.004   44.623    0.000    0.182    0.182
-    CON               0.241    0.004   60.066    0.000    0.241    0.241
+    OPEN              0.177    0.004   43.482    0.000    0.177    0.177
+    CON               0.238    0.004   59.392    0.000    0.238    0.238
   OPEN ~~                                                               
-    CON               0.062    0.004   14.198    0.000    0.062    0.062
+    CON               0.065    0.004   14.822    0.000    0.065    0.065
 
 Variances:
                    Estimate  Std.Err  z-value  P(&gt;|z|)   Std.lv  Std.all
-   .EXT_I             0.900    0.005  188.607    0.000    0.900    0.559
-   .EXT_II            0.891    0.005  182.937    0.000    0.891    0.522
-   .EXT_III           0.751    0.004  180.764    0.000    0.751    0.510
-   .EXT_IV            0.720    0.004  177.899    0.000    0.720    0.494
-   .EXT_V             0.725    0.004  168.255    0.000    0.725    0.447
-   .AGR_I             1.329    0.007  198.799    0.000    1.329    0.750
-   .AGR_II            0.837    0.005  182.629    0.000    0.837    0.648
-   .AGR_III           1.423    0.007  214.160    0.000    1.423    0.886
-   .AGR_IV            0.649    0.004  150.266    0.000    0.649    0.510
-   .AGR_V             0.710    0.005  155.023    0.000    0.710    0.527
-   .EST_I             0.572    0.005  105.193    0.000    0.572    0.332
-   .EST_II            0.987    0.005  191.436    0.000    0.987    0.650
-   .EST_III           0.655    0.004  163.927    0.000    0.655    0.517
-   .EST_IV            1.370    0.006  215.691    0.000    1.370    0.877
-   .EST_V             1.253    0.006  209.073    0.000    1.253    0.798
-   .OPN_I             1.065    0.005  201.122    0.000    1.065    0.796
-   .OPN_II            0.565    0.005  120.237    0.000    0.565    0.468
-   .OPN_III           1.012    0.005  207.017    0.000    1.012    0.840
-   .OPN_IV            0.657    0.004  151.768    0.000    0.657    0.570
-   .OPN_V             0.799    0.004  203.189    0.000    0.799    0.811
-   .CSN_I             0.911    0.005  177.731    0.000    0.911    0.661
-   .CSN_II            1.245    0.007  178.106    0.000    1.245    0.662
-   .CSN_III           0.966    0.005  212.142    0.000    0.966    0.884
-   .CSN_IV            0.863    0.006  155.723    0.000    0.863    0.569
-   .CSN_V             1.008    0.006  168.491    0.000    1.008    0.620
+   .EXT_I             0.894    0.005  188.879    0.000    0.894    0.562
+   .EXT_II            0.897    0.005  183.438    0.000    0.897    0.527
+   .EXT_III           0.754    0.004  180.725    0.000    0.754    0.511
+   .EXT_IV            0.714    0.004  177.135    0.000    0.714    0.491
+   .EXT_V             0.725    0.004  167.819    0.000    0.725    0.446
+   .AGR_I             1.325    0.007  198.075    0.000    1.325    0.746
+   .AGR_II            0.842    0.005  183.173    0.000    0.842    0.652
+   .AGR_III           1.425    0.007  213.532    0.000    1.425    0.880
+   .AGR_IV            0.647    0.004  150.169    0.000    0.647    0.512
+   .AGR_V             0.712    0.005  155.296    0.000    0.712    0.530
+   .EST_I             0.563    0.005  102.602    0.000    0.563    0.322
+   .EST_II            0.982    0.005  192.561    0.000    0.982    0.653
+   .EST_III           0.654    0.004  162.710    0.000    0.654    0.509
+   .EST_IV            1.371    0.006  216.115    0.000    1.371    0.880
+   .EST_V             1.259    0.006  209.387    0.000    1.259    0.797
+   .OPN_I             1.057    0.005  200.088    0.000    1.057    0.788
+   .OPN_II            0.570    0.005  121.729    0.000    0.570    0.470
+   .OPN_III           1.009    0.005  207.448    0.000    1.009    0.842
+   .OPN_IV            0.650    0.004  150.576    0.000    0.650    0.563
+   .OPN_V             0.792    0.004  203.403    0.000    0.792    0.811
+   .CSN_I             0.914    0.005  177.957    0.000    0.914    0.661
+   .CSN_II            1.232    0.007  176.743    0.000    1.232    0.655
+   .CSN_III           0.963    0.005  212.247    0.000    0.963    0.884
+   .CSN_IV            0.859    0.006  154.844    0.000    0.859    0.565
+   .CSN_V             1.016    0.006  170.526    0.000    1.016    0.627
     EXTRA             1.000                               1.000    1.000
     AGREE             1.000                               1.000    1.000
     EMO               1.000                               1.000    1.000
@@ -3775,8 +3774,8 @@ Variances:
 <p><br></p>
 <pre class="r"><code>## plot the CFA model on synthetic data
 lavaanPlot(model = syn_CFA, node_options = list(shape = &quot;box&quot;, fontname = &quot;Helvetica&quot;), edge_options = list(color = &quot;grey&quot;), coefs = TRUE, graph_options = list(layout = &quot;circo&quot;))</code></pre>
-<div id="htmlwidget-310e79b74322acecbe93" style="width:672px;height:480px;" class="grViz html-widget"></div>
-<script type="application/json" data-for="htmlwidget-310e79b74322acecbe93">{"x":{"diagram":" digraph plot { \n graph [ layout = circo ] \n node [ shape = box, fontname = Helvetica ] \n node [shape = box] \n EXT_I; EXT_II; EXT_III; EXT_IV; EXT_V; AGR_I; AGR_II; AGR_III; AGR_IV; AGR_V; EST_I; EST_II; EST_III; EST_IV; EST_V; OPN_I; OPN_II; OPN_III; OPN_IV; OPN_V; CSN_I; CSN_II; CSN_III; CSN_IV; CSN_V \n node [shape = oval] \n EXTRA; AGREE; EMO; OPEN; CON \n \n edge [ color = grey ] \n  EXTRA->EXT_I [label = \"0.84\"] EXTRA->EXT_II [label = \"0.9\"] EXTRA->EXT_III [label = \"0.85\"] EXTRA->EXT_IV [label = \"0.86\"] EXTRA->EXT_V [label = \"0.95\"] AGREE->AGR_I [label = \"0.67\"] AGREE->AGR_II [label = \"0.67\"] AGREE->AGR_III [label = \"0.43\"] AGREE->AGR_IV [label = \"0.79\"] AGREE->AGR_V [label = \"0.8\"] EMO->EST_I [label = \"1.07\"] EMO->EST_II [label = \"0.73\"] EMO->EST_III [label = \"0.78\"] EMO->EST_IV [label = \"0.44\"] EMO->EST_V [label = \"0.56\"] OPEN->OPN_I [label = \"0.52\"] OPEN->OPN_II [label = \"0.8\"] OPEN->OPN_III [label = \"0.44\"] OPEN->OPN_IV [label = \"0.7\"] OPEN->OPN_V [label = \"0.43\"] CON->CSN_I [label = \"0.68\"] CON->CSN_II [label = \"0.8\"] CON->CSN_III [label = \"0.36\"] CON->CSN_IV [label = \"0.81\"] CON->CSN_V [label = \"0.79\"] \n}","config":{"engine":"dot","options":null}},"evals":[],"jsHooks":[]}</script>
+<div id="htmlwidget-041a4fa51fc16aee95b2" style="width:672px;height:480px;" class="grViz html-widget"></div>
+<script type="application/json" data-for="htmlwidget-041a4fa51fc16aee95b2">{"x":{"diagram":" digraph plot { \n graph [ layout = circo ] \n node [ shape = box, fontname = Helvetica ] \n node [shape = box] \n EXT_I; EXT_II; EXT_III; EXT_IV; EXT_V; AGR_I; AGR_II; AGR_III; AGR_IV; AGR_V; EST_I; EST_II; EST_III; EST_IV; EST_V; OPN_I; OPN_II; OPN_III; OPN_IV; OPN_V; CSN_I; CSN_II; CSN_III; CSN_IV; CSN_V \n node [shape = oval] \n EXTRA; AGREE; EMO; OPEN; CON \n \n edge [ color = grey ] \n  EXTRA->EXT_I [label = \"0.83\"] EXTRA->EXT_II [label = \"0.9\"] EXTRA->EXT_III [label = \"0.85\"] EXTRA->EXT_IV [label = \"0.86\"] EXTRA->EXT_V [label = \"0.95\"] AGREE->AGR_I [label = \"0.67\"] AGREE->AGR_II [label = \"0.67\"] AGREE->AGR_III [label = \"0.44\"] AGREE->AGR_IV [label = \"0.79\"] AGREE->AGR_V [label = \"0.79\"] EMO->EST_I [label = \"1.09\"] EMO->EST_II [label = \"0.72\"] EMO->EST_III [label = \"0.79\"] EMO->EST_IV [label = \"0.43\"] EMO->EST_V [label = \"0.57\"] OPEN->OPN_I [label = \"0.53\"] OPEN->OPN_II [label = \"0.8\"] OPEN->OPN_III [label = \"0.43\"] OPEN->OPN_IV [label = \"0.71\"] OPEN->OPN_V [label = \"0.43\"] CON->CSN_I [label = \"0.68\"] CON->CSN_II [label = \"0.81\"] CON->CSN_III [label = \"0.36\"] CON->CSN_IV [label = \"0.81\"] CON->CSN_V [label = \"0.78\"] \n}","config":{"engine":"dot","options":null}},"evals":[],"jsHooks":[]}</script>
 </div>
 <div id="run-analysis-on-original-data" class="section level1" number="8">
 <h1><span class="header-section-number">8</span> Run analysis on
@@ -3792,14 +3791,14 @@ fitMeasures(original_CFA, fit.measures = c(&quot;cfi&quot;,&quot;srmr&quot;, &qu
 <strong><em>Check the CFA (on original data) results in
 detail.</em></strong>
 </summary>
-<pre><code>lavaan 0.6-12 ended normally after 19 iterations
+<pre><code>lavaan 0.6-10 ended normally after 19 iterations
 
   Estimator                                         ML
   Optimization method                           NLMINB
   Number of model parameters                        60
-
+                                                      
   Number of observations                        100000
-
+                                                      
 Model Test User Model:
                                                         
   Test statistic                              116396.465
@@ -3929,8 +3928,8 @@ Variances:
 <p><br></p>
 <pre class="r"><code>## plot the CFA model on original data
 lavaanPlot(model = original_CFA, node_options = list(shape = &quot;box&quot;, fontname = &quot;Helvetica&quot;), edge_options = list(color = &quot;grey&quot;), coefs = TRUE, graph_options = list(layout = &quot;circo&quot;))</code></pre>
-<div id="htmlwidget-1589828093b057a18057" style="width:672px;height:480px;" class="grViz html-widget"></div>
-<script type="application/json" data-for="htmlwidget-1589828093b057a18057">{"x":{"diagram":" digraph plot { \n graph [ layout = circo ] \n node [ shape = box, fontname = Helvetica ] \n node [shape = box] \n EXT_I; EXT_II; EXT_III; EXT_IV; EXT_V; AGR_I; AGR_II; AGR_III; AGR_IV; AGR_V; EST_I; EST_II; EST_III; EST_IV; EST_V; OPN_I; OPN_II; OPN_III; OPN_IV; OPN_V; CSN_I; CSN_II; CSN_III; CSN_IV; CSN_V \n node [shape = oval] \n EXTRA; AGREE; EMO; OPEN; CON \n \n edge [ color = grey ] \n  EXTRA->EXT_I [label = \"0.84\"] EXTRA->EXT_II [label = \"0.9\"] EXTRA->EXT_III [label = \"0.85\"] EXTRA->EXT_IV [label = \"0.86\"] EXTRA->EXT_V [label = \"0.95\"] AGREE->AGR_I [label = \"0.67\"] AGREE->AGR_II [label = \"0.68\"] AGREE->AGR_III [label = \"0.43\"] AGREE->AGR_IV [label = \"0.79\"] AGREE->AGR_V [label = \"0.8\"] EMO->EST_I [label = \"1.08\"] EMO->EST_II [label = \"0.72\"] EMO->EST_III [label = \"0.78\"] EMO->EST_IV [label = \"0.44\"] EMO->EST_V [label = \"0.56\"] OPEN->OPN_I [label = \"0.53\"] OPEN->OPN_II [label = \"0.8\"] OPEN->OPN_III [label = \"0.45\"] OPEN->OPN_IV [label = \"0.7\"] OPEN->OPN_V [label = \"0.44\"] CON->CSN_I [label = \"0.69\"] CON->CSN_II [label = \"0.8\"] CON->CSN_III [label = \"0.36\"] CON->CSN_IV [label = \"0.81\"] CON->CSN_V [label = \"0.78\"] \n}","config":{"engine":"dot","options":null}},"evals":[],"jsHooks":[]}</script>
+<div id="htmlwidget-040ce9e43bfab99416cd" style="width:672px;height:480px;" class="grViz html-widget"></div>
+<script type="application/json" data-for="htmlwidget-040ce9e43bfab99416cd">{"x":{"diagram":" digraph plot { \n graph [ layout = circo ] \n node [ shape = box, fontname = Helvetica ] \n node [shape = box] \n EXT_I; EXT_II; EXT_III; EXT_IV; EXT_V; AGR_I; AGR_II; AGR_III; AGR_IV; AGR_V; EST_I; EST_II; EST_III; EST_IV; EST_V; OPN_I; OPN_II; OPN_III; OPN_IV; OPN_V; CSN_I; CSN_II; CSN_III; CSN_IV; CSN_V \n node [shape = oval] \n EXTRA; AGREE; EMO; OPEN; CON \n \n edge [ color = grey ] \n  EXTRA->EXT_I [label = \"0.84\"] EXTRA->EXT_II [label = \"0.9\"] EXTRA->EXT_III [label = \"0.85\"] EXTRA->EXT_IV [label = \"0.86\"] EXTRA->EXT_V [label = \"0.95\"] AGREE->AGR_I [label = \"0.67\"] AGREE->AGR_II [label = \"0.68\"] AGREE->AGR_III [label = \"0.43\"] AGREE->AGR_IV [label = \"0.79\"] AGREE->AGR_V [label = \"0.8\"] EMO->EST_I [label = \"1.08\"] EMO->EST_II [label = \"0.72\"] EMO->EST_III [label = \"0.78\"] EMO->EST_IV [label = \"0.44\"] EMO->EST_V [label = \"0.56\"] OPEN->OPN_I [label = \"0.53\"] OPEN->OPN_II [label = \"0.8\"] OPEN->OPN_III [label = \"0.45\"] OPEN->OPN_IV [label = \"0.7\"] OPEN->OPN_V [label = \"0.44\"] CON->CSN_I [label = \"0.69\"] CON->CSN_II [label = \"0.8\"] CON->CSN_III [label = \"0.36\"] CON->CSN_IV [label = \"0.81\"] CON->CSN_V [label = \"0.78\"] \n}","config":{"engine":"dot","options":null}},"evals":[],"jsHooks":[]}</script>
 <hr>
 <p>As seen above in the plots as well as in the table below, it is
 observed that the resulting estimates from the factor analysis on the
@@ -3962,7 +3961,7 @@ Original_se
 EXTRA =~ EXT_IV
 </td>
 <td style="text-align:center;">
-0.859
+0.860
 </td>
 <td style="text-align:center;">
 0.860
@@ -3996,7 +3995,7 @@ EXTRA =~ EXT_V
 AGREE =~ AGR_IV
 </td>
 <td style="text-align:center;">
-0.789
+0.786
 </td>
 <td style="text-align:center;">
 0.787
@@ -4013,7 +4012,7 @@ AGREE =~ AGR_IV
 AGREE =~ AGR_V
 </td>
 <td style="text-align:center;">
-0.798
+0.794
 </td>
 <td style="text-align:center;">
 0.797
@@ -4030,7 +4029,7 @@ AGREE =~ AGR_V
 EMO =~ EST_IV
 </td>
 <td style="text-align:center;">
-0.438
+0.432
 </td>
 <td style="text-align:center;">
 0.439
@@ -4047,7 +4046,7 @@ EMO =~ EST_IV
 EMO =~ EST_V
 </td>
 <td style="text-align:center;">
-0.564
+0.565
 </td>
 <td style="text-align:center;">
 0.561
@@ -4064,7 +4063,7 @@ EMO =~ EST_V
 OPEN =~ OPN_IV
 </td>
 <td style="text-align:center;">
-0.704
+0.710
 </td>
 <td style="text-align:center;">
 0.702
@@ -4081,7 +4080,7 @@ OPEN =~ OPN_IV
 OPEN =~ OPN_V
 </td>
 <td style="text-align:center;">
-0.432
+0.429
 </td>
 <td style="text-align:center;">
 0.441
@@ -4098,7 +4097,7 @@ OPEN =~ OPN_V
 CON =~ CSN_IV
 </td>
 <td style="text-align:center;">
-0.808
+0.813
 </td>
 <td style="text-align:center;">
 0.808
@@ -4115,7 +4114,7 @@ CON =~ CSN_IV
 CON =~ CSN_V
 </td>
 <td style="text-align:center;">
-0.787
+0.777
 </td>
 <td style="text-align:center;">
 0.782

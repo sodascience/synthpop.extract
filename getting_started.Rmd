@@ -1,6 +1,6 @@
 ---
-title: "Reproducible CBS data sets using synthpop package"
-author: "Erik-Jan van Kesteren & Kyuri Park"
+title: "Reproducible CBS data sets using the synthpop package"
+author: "Kyuri Park & Erik-Jan van Kesteren"
 date: "`r format(Sys.time(), '%B %d, %Y')`"
 output:
   html_document:
@@ -10,7 +10,6 @@ output:
     toc_float: true
     number_sections: true
     theme: lumen
-  
 
 ---
 
@@ -34,6 +33,25 @@ Here we will illustrate each step of the procedure using an example data set.
 </div>
 
 <hr>
+
+# Preparation
+
+First, we need to load the following packages and import the functions (i.e., `synp_get_param`, `synp_read_sheets`, `synp_gen_syndat`) from the `synthpop_extractor.R` file. 
+
+```{r}
+## load packages
+library(tidyverse)
+library(skimr)
+library(readxl)
+library(writexl)
+library(synthpop)
+library(lavaan)
+library(lavaanPlot)
+
+## import the functions
+source("synthpop_extractor.R")
+```
+
 
 # Example dataset
 `big5_kag.csv` is a [Big Five personality traits](https://en.wikipedia.org/wiki/Big_Five_personality_traits) data set found on [kaggle](https://www.kaggle.com/datasets/tunguz/big-five-personality-test). It contains more than a million (1,015,342) answers collected from 2016 to 2018. 
@@ -93,30 +111,16 @@ Let's take a quick look at the data summary.
 
 ```{r, eval=FALSE}
 ## data summary
-skimr::skim(big5)
+skim(big5)
 ```
 <details>
   <summary>***See the data summary.***</summary>
 ```{r, echo=FALSE, eval=TRUE}
-skimr::skim(big5)
+skim(big5)
 ```
 </details> 
 <br>
 
-# Preparation
-
-First, we need to load the following packages and import the functions (i.e., `synp_get_param`, `synp_read_sheets`, `synp_gen_syndat`) from the `synthpop_extractor.R` file. 
-
-```{r}
-## load packages
-library(writexl)
-library(synthpop)
-library(lavaan)
-library(lavaanPlot)
-
-## import the functions
-source("synthpop_extractor.R")
-```
 
 # Extract model parameters
 As the first step to generate synthetic data, we extract the model parameters.
@@ -140,8 +144,8 @@ model_par <- synp_get_param(big5, synds)
 ```
 
 
-# Export to Excel / Import from CBS
-We export the model parameters to Excel using `writexl` package: `write_xlsx(list of dataframes, filepath)`. Then, you would be able to import the xlsx file from the CBS environment and store it in your local device.
+# Save to Excel & Export from CBS
+We export the model parameters to Excel using `writexl` package: `write_xlsx(list of dataframes, filepath)`. Then, you would be able to export the xlsx file from the CBS environment through the regular output check and store it on your local device.
 
 ```{r}
 ## export to Excel
@@ -232,8 +236,6 @@ As seen above in the plots as well as in the table below, it is observed that th
 
 
 ```{r echo=FALSE}
-library(tidyverse)
-
 original_est <- parameterEstimates(original_CFA) %>% 
   filter(grepl('V', rhs) & op == '=~')  %>% 
   dplyr::select(est, se) %>% 

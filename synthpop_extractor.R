@@ -18,7 +18,7 @@ synp_get_param <- function(df, synds) {
   # extract parameters
   if (is.null(synds$models)) 
     stop("Run synthpop::syn() with argument `models = TRUE` to extract parameters")
-  if(any(str_detect(colnames(df), "\\d"))) 
+  if(any(stringr::str_detect(colnames(df), "\\d"))) 
     stop("Numbers are not allowed in the variable names. Please consider converting them into alphabet characters")
   params <- synds$models
   col_nm <- names(params)
