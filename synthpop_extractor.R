@@ -1,4 +1,4 @@
-#' Extract parameter list from synds object
+#' Extract parameter list from synds object  
 #' 
 #' @param df the original data frame
 #' @param synds the fitted synds object
@@ -37,7 +37,7 @@ synp_get_param <- function(df, synds) {
       value = c(pt[[2]], names(pt)) 
     )
     used_methods[1] <- "logreg" # change the used method to "logreg" instead of "sample"
-  } else if (is.factor(first_var) && nlevels(first_var) >= 2){
+  } else if (is.factor(first_var) && nlevels(first_var) > 2){
     stop("`polyreg` is not implemented yet.")
   }  else if (!is.factor(first_var) && length(unique(first_var))==2){
     stop("Please convert the dicothomous variable to a factor in order to implement `logreg`.")
@@ -140,11 +140,12 @@ synp_gen_syndat <- function(par_list, n = 1000) {
       syndat[,col_nm[i]] <- rnorm(n = n, mean = m, sd = s)
     }
     if (methods[i] =="logreg"){
-      xp <- scale(xp, scale=FALSE)
+      xp[,-1] <- scale(xp[,-1], scale=FALSE) # except for the first column (1s)
       p   <- 1/(1 + exp(-(xp %*% betas)))
-      # syndat[, col_nm[i]] <- as.factor(runif(nrow(p)) <= p)
-      syndat[,col_nm[i]] <- as.factor(rbinom(nrow(p),1, p))
-      levels(syndat[,1]) <- c(cur_df[cur_df[,1] == "label(0)", 2], 
+      #syndat[, col_nm[i]] <- as.factor(runif(nrow(p)) <= p)
+      syndat[,col_nm[i]] <- as.factor(rbinom(nrow(p), 1, p))
+      
+      levels(syndat[,i]) <- c(cur_df[cur_df[,1] == "label(0)", 2], 
                               cur_df[cur_df[,1] == "label(1)", 2])
     }
   }
