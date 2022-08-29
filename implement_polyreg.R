@@ -10,7 +10,7 @@
 synp_get_param_addpoly <- function(df, synds) {
   # check that only parametric methods were used
   allowed_methods <- c("norm", "logreg", "polyreg")  
-  # TODO: far future: "polyreg", "polyr"
+  # TODO: far future: polyr"
   used_methods <- synds$method 
   if (!all(used_methods[-1] %in% allowed_methods)) 
     stop("Extracting method should be parametric.")
@@ -27,8 +27,9 @@ synp_get_param_addpoly <- function(df, synds) {
   par_list <- list()
   
   # for the first variable, 
-  # extract mean and sd from the original data when "norm" and
   # extract probability when "logreg"
+  # extract probability per category when "polyreg
+  # extract mean and sd from the original data when "norm"
   first_var <- df[,1]
   if(is.factor(first_var) && nlevels(first_var)==2){ # since synthpop by default uses "sample" method for the first variable... 
     pt <- prop.table(table(first_var)) # prop. table
@@ -55,8 +56,9 @@ synp_get_param_addpoly <- function(df, synds) {
   }
   
   # for remaining variables, 
-  # extract betas and sigma when "norm" and
+  # extract betas and sigma when "norm" 
   # extract betas and level labels when "logreg"
+  # extract betas per category when "polyreg"
   for (i in 2:length(params)) {
     if(used_methods[[i]]=="norm"){
       par_list[[i]] <- data.frame(
@@ -75,7 +77,7 @@ synp_get_param_addpoly <- function(df, synds) {
     
     if(used_methods[[i]]=="polyreg"){
       betas <- as.data.frame(coef(params[[i]]))
-      values <- pivot_longer(cols = everything(), betas, names_to ="variable", values_to = "value")
+      values <- tidyr::pivot_longer(cols = everything(), betas, names_to ="variable", values_to = "value")
       param_combined <- expand.grid(paste0("b", 0:(ncol(betas)-1)),  rownames(betas))
       par_list[[i]] <- data.frame(
         param = paste0(param_combined$Var1, "_", param_combined$Var2),
@@ -135,13 +137,13 @@ synp_gen_syndat_addpoly <- function(par_list, n = 1000) {
                             cur_df[cur_df[,1] == "label(1)", 2])
   }
   if (methods[1]=="polyreg"){
-    ind_mat <- rmultinom(n=n, size=1, prob=cur_df$probability) 
+    ind_mat <- stats::rmultinom(n=n, size=1, prob=cur_df$probability) 
     idx <- apply(ind_mat, 2, function(x) which(x==1))
     syndat <- data.frame(v1 = factor(cur_df$cat_label[idx], levels = cur_df$cat_label))
   }
   colnames(syndat) <- col_nm[1]
 
-  # for the remaining variable, extract betas and previously synthesized data
+  # for the remaining variable, use the parameters and previously synthesized data
   for (i in 2:length(par_list)) {
     cur_df <- par_list[[i]]
     
@@ -176,7 +178,6 @@ synp_gen_syndat_addpoly <- function(par_list, n = 1000) {
       cur_df$category <- separate_cols[,2]
       # exclude the first (name) column and convert it to matrix
       betas <- as.matrix(tidyr::pivot_wider(cur_df, names_from = category, values_from = value)[,-1])
-
       # compute probabilities for each category
       probs <- matrix(NA, nrow = n, ncol= ncol(betas)+1) # storage
       for (k in 1:ncol(betas)){
@@ -197,85 +198,3 @@ synp_gen_syndat_addpoly <- function(par_list, n = 1000) {
   }
   return(syndat)
 }
-
-
-
-
-
-#################################################
-## example case (polyreg is not the first var) ##
-#################################################
-library(tidyverse)
-
-exampledata <- read.csv("Birthweight.csv")
-
-# create catagorical variables
-polydat <- data.frame(as.factor(ifelse(exampledata$mnocig < 1, '0',
-                                ifelse(exampledata$mnocig < 10, '<10',
-                                ifelse(exampledata$mnocig < 26, '<25','25+')))))
-colnames(polydat) <- "mnocig"
-
-polydat$fnocig <- as.factor(ifelse(exampledata$fnocig < 1, '0',
-                                       ifelse(exampledata$fnocig < 10, '<10',
-                                              ifelse(exampledata$fnocig < 26, '<25','25+'))))
-# check the dataset
-table(polydat$mnocig)
-table(polydat$fnocig)
-str(polydat)
-
-polydat <- polydat %>% 
-  # add some normal variables to the dataset
-  mutate(mheight = exampledata$mheight, Bweight = exampledata$Birthweight) %>% 
-  # reorder columns (so that we can use polyreg for both categorical vars)
-  relocate(where(is.numeric), .before = where(is.factor)) %>% 
-  # reorder the categories in categorical variables
-  mutate(mnocig = fct_relevel(mnocig, "0"), fnocig = fct_relevel(fnocig, "0"))
-
-# check the dataset
-GGally::ggpairs(polydat)
-
-# run synthpop
-synobj <- synthpop::syn(polydat, method=c("sample", "norm", "polyreg", "polyreg"), models = TRUE)
-
-# get the parameters
-res <- synp_get_param_addpoly(polydat, synobj)
-# export to excel
-writexl::write_xlsx(res, "try_addpoly.xlsx")
-
-# read in the parameters
-par <- synp_read_sheets("try_addpoly.xlsx")
-
-# generate synthetic data 
-syn_poly <- synp_gen_syndat_addpoly(par, n = nrow(polydat))
-
-# check the result
-summary(syn_poly); summary(polydat); summary(synobj$syn)
-
-
-#############################################
-## example case (polyreg is the first var) ##
-#############################################
-
-polydat2 <- polydat %>% 
-  # reorder columns (so that polyreg is the first variable)
-  relocate(mnocig) 
-
-synobj2 <- synthpop::syn(polydat2, method=c("sample", "norm", "norm", "polyreg"), models = TRUE)
-
-
-# get the parameters
-res2 <- synp_get_param_addpoly(polydat2, synobj2)
-
-# export to excel
-writexl::write_xlsx(res2, "try_addpoly2.xlsx")
-
-# read in the parameters
-par2 <- synp_read_sheets("try_addpoly2.xlsx")
-
-# generate synthetic data 
-syn_poly2 <- synp_gen_syndat_addpoly(par2, n = nrow(polydat))
-
-# check the result
-summary(syn_poly2); summary(polydat2); summary(synobj2$syn)
-
-

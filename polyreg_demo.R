@@ -1,12 +1,13 @@
 library(tidyverse)
 source("implement_polyreg.R")
+
 #################################################
 ## example case (polyreg is not the first var) ##
 #################################################
 
 exampledata <- read.csv("Birthweight.csv")
 
-# create catagorical variables
+# create categorical variables
 polydat <- data.frame(as.factor(ifelse(exampledata$mnocig < 1, '0',
                                        ifelse(exampledata$mnocig < 10, '<10',
                                               ifelse(exampledata$mnocig < 26, '<25','25+')))))
@@ -31,18 +32,19 @@ polydat <- polydat %>%
 # check the dataset
 GGally::ggpairs(polydat)
 
-# run synthpop
+## 1) run synthpop
 synobj <- synthpop::syn(polydat, method=c("sample", "norm", "polyreg", "polyreg"), models = TRUE)
 
-# get the parameters
+## 2) get the parameters
 res <- synp_get_param_addpoly(polydat, synobj)
-# export to excel
+
+## 3) export to excel
 writexl::write_xlsx(res, "try_addpoly.xlsx")
 
-# read in the parameters
+## 4) read in the parameters
 par <- synp_read_sheets("try_addpoly.xlsx")
 
-# generate synthetic data 
+## 5) generate synthetic data 
 syn_poly <- synp_gen_syndat_addpoly(par, n = nrow(polydat))
 
 # check the result
@@ -57,19 +59,19 @@ polydat2 <- polydat %>%
   # reorder columns (so that polyreg is the first variable)
   relocate(mnocig) 
 
+## 1) run synthpop
 synobj2 <- synthpop::syn(polydat2, method=c("sample", "norm", "norm", "polyreg"), models = TRUE)
 
-
-# get the parameters
+## 2) get the parameters
 res2 <- synp_get_param_addpoly(polydat2, synobj2)
 
-# export to excel
+## 3) export to excel
 writexl::write_xlsx(res2, "try_addpoly2.xlsx")
 
-# read in the parameters
+## 4) read in the parameters
 par2 <- synp_read_sheets("try_addpoly2.xlsx")
 
-# generate synthetic data 
+## 5) generate synthetic data 
 syn_poly2 <- synp_gen_syndat_addpoly(par2, n = nrow(polydat))
 
 # check the result
