@@ -1,5 +1,5 @@
 library(tidyverse)
-source("implement_polyreg.R")
+source("synthpop_extractor.R")
 
 #################################################
 ## example case (polyreg is not the first var) ##
@@ -36,7 +36,7 @@ GGally::ggpairs(polydat)
 synobj <- synthpop::syn(polydat, method=c("sample", "norm", "polyreg", "polyreg"), models = TRUE)
 
 ## 2) get the parameters
-res <- synp_get_param_addpoly(polydat, synobj)
+res <- synp_get_param(polydat, synobj)
 
 ## 3) export to excel
 writexl::write_xlsx(res, "try_addpoly.xlsx")
@@ -45,7 +45,7 @@ writexl::write_xlsx(res, "try_addpoly.xlsx")
 par <- synp_read_sheets("try_addpoly.xlsx")
 
 ## 5) generate synthetic data 
-syn_poly <- synp_gen_syndat_addpoly(par, n = nrow(polydat))
+syn_poly <- synp_gen_syndat(par, n = nrow(polydat))
 
 # check the result
 summary(syn_poly); summary(polydat); summary(synobj$syn)
@@ -62,7 +62,7 @@ polydat2 <- polydat %>%
 synobj2 <- synthpop::syn(polydat2, method=c("sample", "norm", "norm", "polyreg"), models = TRUE)
 
 ## 2) get the parameters
-res2 <- synp_get_param_addpoly(polydat2, synobj2)
+res2 <- synp_get_param(polydat2, synobj2)
 
 ## 3) export to excel
 writexl::write_xlsx(res2, "try_addpoly2.xlsx")
@@ -71,7 +71,7 @@ writexl::write_xlsx(res2, "try_addpoly2.xlsx")
 par2 <- synp_read_sheets("try_addpoly2.xlsx")
 
 ## 5) generate synthetic data 
-syn_poly2 <- synp_gen_syndat_addpoly(par2, n = nrow(polydat2))
+syn_poly2 <- synp_gen_syndat(par2, n = nrow(polydat2))
 
 # check the result
 summary(syn_poly2); summary(polydat2); summary(synobj2$syn)
