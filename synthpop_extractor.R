@@ -9,8 +9,8 @@
 #' @return a list of data frames
 synp_get_param <- function(df, synds) {
   # check that only parametric methods were used
-  allowed_methods <- c("norm", "logreg") # "logreg" added 
-  # TODO: far future: "polyreg", "polyr")
+  allowed_methods <- c("norm", "logreg", "polyreg")  
+  # TODO: far future: polyr"
   used_methods <- synds$method 
   if (!all(used_methods[-1] %in% allowed_methods)) 
     stop("Extracting method should be parametric.")
@@ -27,21 +27,29 @@ synp_get_param <- function(df, synds) {
   par_list <- list()
   
   # for the first variable, 
-  # extract mean and sd from the original data when "norm" and
   # extract probability when "logreg"
+  # extract probability per category when "polyreg
+  # extract mean and sd from the original data when "norm"
   first_var <- df[,1]
   if(is.factor(first_var) && nlevels(first_var)==2){ # since synthpop by default uses "sample" method for the first variable... 
-    pt <- prop.table(table(first_var)) # prop. table
+    tt <- table(first_var)
+    pt <- prop.table(tt) # prop. table
     par_list[[1]] <- data.frame(          
       param = c("prob", "label(0)", "label(1)"),               
       value = c(pt[[2]], names(pt)) 
     )
     used_methods[1] <- "logreg" # change the used method to "logreg" instead of "sample"
+    
   } else if (is.factor(first_var) && nlevels(first_var) > 2){
-    stop("`polyreg` is not implemented yet.")
-  }  else if (!is.factor(first_var) && length(unique(first_var))==2){
-    stop("Please convert the dicothomous variable to a factor in order to implement `logreg`.")
-  }else{
+    tt <- table(first_var)
+    pt <- prop.table(tt) # prop. table
+    par_list[[1]] <- as.data.frame(pt)
+    colnames(par_list[[1]]) <- c("cat_label", "probability")
+    used_methods[1] <- "polyreg"
+  } else { # "norm" method
+    if (length(unique(first_var)) <= (sqrt(nrow(df)) + 5)) 
+      warning("First variable may be categorical. Please convert dichotomous/categorical variables to a factor in order to implement `logreg`/`polyreg`.")
+    
     par_list[[1]] <- data.frame(
       param = c("mean", "sd"),
       value = c(mean(df[[col_nm[1]]], na.rm = TRUE), sd(df[[col_nm[1]]], na.rm = TRUE))
@@ -50,8 +58,9 @@ synp_get_param <- function(df, synds) {
   }
   
   # for remaining variables, 
-  # extract betas and sigma when "norm" and
+  # extract betas and sigma when "norm" 
   # extract betas and level labels when "logreg"
+  # extract betas per category when "polyreg"
   for (i in 2:length(params)) {
     if(used_methods[[i]]=="norm"){
       par_list[[i]] <- data.frame(
@@ -65,6 +74,16 @@ synp_get_param <- function(df, synds) {
       par_list[[i]] <- data.frame(
         param = c(paste0("b", 0:(length(betas)-1)),  "label(0)", "label(1)"),
         value = c(betas, names(pt))
+      )
+    }
+    
+    if(used_methods[[i]]=="polyreg"){
+      betas <- as.data.frame(coef(params[[i]]))
+      values <- tidyr::pivot_longer(cols = everything(), betas, names_to ="variable", values_to = "value")
+      param_combined <- expand.grid(paste0("b", 0:(ncol(betas)-1)),  rownames(betas))
+      par_list[[i]] <- data.frame(
+        param = paste0(param_combined$Var1, "_", param_combined$Var2),
+        value = values[,2]
       )
     }
   }
@@ -112,35 +131,36 @@ synp_gen_syndat <- function(par_list, n = 1000) {
     m <- cur_df[cur_df[,1] == "mean", 2]
     s <- cur_df[cur_df[,1] == "sd", 2]
     syndat <- data.frame(v1 = rnorm(n = n, mean = m, sd = s))
-    colnames(syndat) <- col_nm[1]
   }
   if (methods[1] =="logreg"){
     p <- as.numeric(cur_df[cur_df[,1] == "prob", 2]) # as.numeric() is necessary as they are stored as character (for logreg)
     syndat <- data.frame(v1 = as.factor(rbinom(n = n, size = 1, prob = p)))
     levels(syndat[,1]) <- c(cur_df[cur_df[,1] == "label(0)", 2], 
                             cur_df[cur_df[,1] == "label(1)", 2])
-    colnames(syndat) <- col_nm[1]
   }
+  if (methods[1]=="polyreg"){
+    ind_mat <- rmultinom(n=n, size=1, prob=cur_df$probability) 
+    idx <- apply(ind_mat, 2, function(x) which(x==1))
+    syndat <- data.frame(v1 = factor(cur_df$cat_label[idx], levels = cur_df$cat_label))
+  }
+  colnames(syndat) <- col_nm[1]
   
-  # for the remaining variable, extract betas and previously synthesized data
+  # for the remaining variable, use the parameters and previously synthesized data
   for (i in 2:length(par_list)) {
     cur_df <- par_list[[i]]
     
-    # storage for previously synthesized data (=predictors for the current variable)
-    # xp = design matrix for variable i
-    xp <- matrix(NA, nrow = n, ncol = (i - 1)) 
-    for (j in 1:(i - 1)){
-      xp[,j] <- syndat[,j]
-    }
-    xp <- cbind(1, xp)
+    # xp = design matrix 
+    # previously synthesized data (=predictors for the current variable)
+    xp <- model.matrix(as.formula(paste("~", paste(colnames(syndat), collapse ="+"))), data = syndat)
     betas <- as.matrix(as.numeric(cur_df[grepl("^b", cur_df[,1]), 2]))
     if (methods[i] == "norm"){
       m <- xp %*% betas 
       s <- cur_df[cur_df[,1] == "sd", 2]
       syndat[,col_nm[i]] <- rnorm(n = n, mean = m, sd = s)
     }
-    if (methods[i] =="logreg"){
-      xp[,-1] <- scale(xp[,-1], scale=FALSE) # except for the first column (1s)
+    if (methods[i] == "logreg"){
+      scaleidx <- apply(xp, 2, function(x) length(unique(x)) > 2)
+      xp[,scaleidx] <- scale(xp[,scaleidx], scale=FALSE) 
       p   <- 1/(1 + exp(-(xp %*% betas)))
       #syndat[, col_nm[i]] <- as.factor(runif(nrow(p)) <= p)
       syndat[,col_nm[i]] <- as.factor(rbinom(nrow(p), 1, p))
@@ -148,6 +168,38 @@ synp_gen_syndat <- function(par_list, n = 1000) {
       levels(syndat[,i]) <- c(cur_df[cur_df[,1] == "label(0)", 2], 
                               cur_df[cur_df[,1] == "label(1)", 2])
     }
+    if (methods[i] == "polyreg"){
+      # first, re-scale them to [0,1] as synthpop did (not ideal as we don't have data "xf" which synthpop uses to scale)
+      toscale <- apply(xp, 2, function(z) (is.numeric(z) & (any(z < 0) | any(z > 1))))
+      rsc <- apply(xp[, toscale, drop = FALSE], 2, range)
+      for (l in names(toscale[toscale == TRUE])) xp[, l] <- (xp[, l] - rsc[1,l])/(rsc[2,l] - rsc[1,l])
+      
+      # reformat the parameters
+      separate_cols <- stringr::str_split(cur_df$param, pattern="_", simplify = TRUE)
+      cur_df$param <- separate_cols[,1]
+      cur_df$category <- separate_cols[,2]
+      # exclude the first (name) column and convert it to matrix
+      betas <- as.matrix(tidyr::pivot_wider(cur_df, names_from = category, values_from = value)[,-1])
+      # compute probabilities for each category
+      probs <- matrix(NA, nrow = n, ncol= ncol(betas)+1) # storage
+      for (k in 1:ncol(betas)){
+        probs[,k+1] <- exp(xp %*% as.matrix(betas[,k]))/(1 + rowSums(exp(xp %*% betas)))
+      }
+      probs[,1] <- 1 - rowSums(probs[,-1]) # reference category
+      colnames(probs) <- c("ref", unique(cur_df$category))
+      
+      # sample from multinomial posterior
+      un <- rep(runif(nrow(xp)), each = ncol(probs))
+      draws <- un > apply(probs, 1, cumsum)
+      idx   <- 1 + apply(draws, 2, sum)
+      
+      # create synthetic data
+      syndat[,col_nm[i]] <- factor(colnames(probs)[idx] , levels=colnames(probs))
+    }
+    
+    # the synthpop models spit out the betas in such an order that factor variables are behind the numerical variables... 
+    syndat <- dplyr::relocate(syndat, where(is.factor), .after = where(is.numeric))
+    
   }
-  return(syndat)
+  return(syndat[,col_nm]) # rearrange the columns as the original order
 }
