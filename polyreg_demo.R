@@ -50,7 +50,6 @@ syn_poly <- synp_gen_syndat_addpoly(par, n = nrow(polydat))
 # check the result
 summary(syn_poly); summary(polydat); summary(synobj$syn)
 
-
 #############################################
 ## example case (polyreg is the first var) ##
 #############################################
@@ -72,9 +71,8 @@ writexl::write_xlsx(res2, "try_addpoly2.xlsx")
 par2 <- synp_read_sheets("try_addpoly2.xlsx")
 
 ## 5) generate synthetic data 
-syn_poly2 <- synp_gen_syndat_addpoly(par2, n = nrow(polydat))
+syn_poly2 <- synp_gen_syndat_addpoly(par2, n = nrow(polydat2))
 
 # check the result
 summary(syn_poly2); summary(polydat2); summary(synobj2$syn)
-
 

@@ -57,6 +57,7 @@ writexl::write_xlsx(res, "try_addlog.xlsx")
 par <- synp_read_sheets("try_addlog.xlsx")
 # generate synthetic data 
 syn_log <- synp_gen_syndat(par, n = nrow(bw))
+
 # it's off... :-( (but then "mage" is not really normally distributed)
 summary(syn_log); summary(bw); summary(synds$syn)
 
@@ -91,6 +92,7 @@ writexl::write_xlsx(res, "try_newf.xlsx")
 par <- synp_read_sheets("try_newf.xlsx")
 # generate synthetic data 
 syn_new <- synp_gen_syndat(par)
+
 # it's okay!
 summary(syn_new); summary(df); summary(synds$syn)
 

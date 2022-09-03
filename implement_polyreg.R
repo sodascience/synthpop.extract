@@ -32,7 +32,8 @@ synp_get_param_addpoly <- function(df, synds) {
   # extract mean and sd from the original data when "norm"
   first_var <- df[,1]
   if(is.factor(first_var) && nlevels(first_var)==2){ # since synthpop by default uses "sample" method for the first variable... 
-    pt <- prop.table(table(first_var)) # prop. table
+    tt <- table(first_var)
+    pt <- prop.table(tt) # prop. table
     par_list[[1]] <- data.frame(          
       param = c("prob", "label(0)", "label(1)"),               
       value = c(pt[[2]], names(pt)) 
@@ -40,14 +41,15 @@ synp_get_param_addpoly <- function(df, synds) {
     used_methods[1] <- "logreg" # change the used method to "logreg" instead of "sample"
     
   } else if (is.factor(first_var) && nlevels(first_var) > 2){
-    pt <- prop.table(table(first_var)) # prop. table
+    tt <- table(first_var)
+    pt <- prop.table(tt) # prop. table
     par_list[[1]] <- as.data.frame(pt)
     colnames(par_list[[1]]) <- c("cat_label", "probability")
     used_methods[1] <- "polyreg"
-  }  else if (!is.factor(first_var) && length(unique(first_var)) <= 10){ ## how many categories would be considered as categorical?...
-    stop("Please convert the dicothomous/categorical variable to a factor in order to implement `logreg`/`polyreg`.")
+  } else { # "norm" method
+    if (length(unique(first_var)) <= (sqrt(nrow(df)) + 5)) 
+      warning("First variable may be categorical. Please convert dichotomous/categorical variables to a factor in order to implement `logreg`/`polyreg`.")
     
-  }else{ # "norm" method
     par_list[[1]] <- data.frame(
       param = c("mean", "sd"),
       value = c(mean(df[[col_nm[1]]], na.rm = TRUE), sd(df[[col_nm[1]]], na.rm = TRUE))
@@ -137,7 +139,7 @@ synp_gen_syndat_addpoly <- function(par_list, n = 1000) {
                             cur_df[cur_df[,1] == "label(1)", 2])
   }
   if (methods[1]=="polyreg"){
-    ind_mat <- stats::rmultinom(n=n, size=1, prob=cur_df$probability) 
+    ind_mat <- rmultinom(n=n, size=1, prob=cur_df$probability) 
     idx <- apply(ind_mat, 2, function(x) which(x==1))
     syndat <- data.frame(v1 = factor(cur_df$cat_label[idx], levels = cur_df$cat_label))
   }
@@ -146,7 +148,7 @@ synp_gen_syndat_addpoly <- function(par_list, n = 1000) {
   # for the remaining variable, use the parameters and previously synthesized data
   for (i in 2:length(par_list)) {
     cur_df <- par_list[[i]]
-    
+
     # xp = design matrix 
     # previously synthesized data (=predictors for the current variable)
     xp <- model.matrix(as.formula(paste("~", paste(colnames(syndat), collapse ="+"))), data = syndat)
@@ -186,7 +188,7 @@ synp_gen_syndat_addpoly <- function(par_list, n = 1000) {
       probs[,1] <- 1 - rowSums(probs[,-1]) # reference category
       colnames(probs) <- c("ref", unique(cur_df$category))
       
-      # add some noise
+      # sample from multinomial posterior
       un <- rep(runif(nrow(xp)), each = ncol(probs))
       draws <- un > apply(probs, 1, cumsum)
       idx   <- 1 + apply(draws, 2, sum)
@@ -195,6 +197,9 @@ synp_gen_syndat_addpoly <- function(par_list, n = 1000) {
       syndat[,col_nm[i]] <- factor(colnames(probs)[idx] , levels=colnames(probs))
     }
     
+    # the synthpop models spit out the betas in such an order that factor variables are behind the numerical variables... 
+    syndat <- dplyr::relocate(syndat, where(is.factor), .after = where(is.numeric))
+    
   }
-  return(syndat)
+  return(syndat[,col_nm]) # rearrange the columns as the original order
 }
