@@ -8,6 +8,10 @@
 #' 
 #' @return a list of data frames
 synp_get_param <- function(df, synds) {
+  # disclosure control check
+  if(nrow(df) < 10) 
+    stop("Disclosure control: At least 10 observations are required.")
+  
   # check that only parametric methods were used
   allowed_methods <- c("norm", "logreg", "polyreg")  
   # TODO: far future: polyr"
@@ -31,9 +35,12 @@ synp_get_param <- function(df, synds) {
   # extract probability per category when "polyreg
   # extract mean and sd from the original data when "norm"
   first_var <- df[,1]
-  if(is.factor(first_var) && nlevels(first_var)==2){ # since synthpop by default uses "sample" method for the first variable... 
+  if(is.factor(first_var) && nlevels(first_var)==2){ # since synthpop by default uses "sample" method for the first variable
     tt <- table(first_var)
-    pt <- prop.table(tt) # prop. table
+    pt <- prop.table(tt) 
+    # disclosure control check
+    if (any(tt < 10)) stop(glue::glue("Disclosure control: {col_nm[1]} should have minimum 10 observations per cell to proceed."))
+    if(max(pt) > .9) stop(glue::glue("Disclosure control: {col_nm[1] has a cell contains more than 90% of the total observations."))
     par_list[[1]] <- data.frame(          
       param = c("prob", "label(0)", "label(1)"),               
       value = c(pt[[2]], names(pt)) 
@@ -42,14 +49,17 @@ synp_get_param <- function(df, synds) {
     
   } else if (is.factor(first_var) && nlevels(first_var) > 2){
     tt <- table(first_var)
-    pt <- prop.table(tt) # prop. table
+    pt <- prop.table(tt) 
+    # disclosure control check
+    if (any(tt < 10)) stop(glue::glue("Disclosure control: {col_nm[1]} should have minimum 10 observations per cell to proceed."))
+    if(max(pt) > .9) stop(glue::glue("Disclosure control: {col_nm[1] has a cell contains more than 90% of the total observations."))
     par_list[[1]] <- as.data.frame(pt)
     colnames(par_list[[1]]) <- c("cat_label", "probability")
     used_methods[1] <- "polyreg"
+    
   } else { # "norm" method
     if (length(unique(first_var)) <= (sqrt(nrow(df)) + 5)) 
       warning("First variable may be categorical. Please convert dichotomous/categorical variables to a factor in order to implement `logreg`/`polyreg`.")
-    
     par_list[[1]] <- data.frame(
       param = c("mean", "sd"),
       value = c(mean(df[[col_nm[1]]], na.rm = TRUE), sd(df[[col_nm[1]]], na.rm = TRUE))
@@ -62,17 +72,31 @@ synp_get_param <- function(df, synds) {
   # extract betas and level labels when "logreg"
   # extract betas per category when "polyreg"
   for (i in 2:length(params)) {
+    
     if(used_methods[[i]]=="norm"){
+      # disclosure control check
+      dof <- length(df[,i]) - (length(params[[i]]$beta) + 1) # number of betas + one sigma
+      if(dof < 10) stop(glue::glue("Disclosure control: {col_nm[i]} should have minimum 10 degrees of freedom to proceed."))
       par_list[[i]] <- data.frame(
         param = c(paste0("b", 0:(length(params[[i]]$beta)-1)), "sd"),
+        varname = c("intercept", rownames(params[[i]]$beta)[-1], "sd"),
         value = c(params[[i]]$beta, params[[i]]$sigma)
       )
     }
     
     if(used_methods[[i]]=="logreg"){
       betas <- unname(coef(params[[i]])[,1])
+      # disclosure control check
+      tt <- table(df[,i])
+      pt <- prop.table(tt)
+      if (any(tt < 10)) stop(glue::glue("Disclosure control: {col_nm[i]} should have minimum 10 observations per cell to proceed."))
+      dof <- length(df[,i]) - length(betas)
+      if(dof < 10) stop(glue::glue("Disclosure control: {col_nm[i]} should have minimum 10 degrees of freedom to proceed."))
+      if(max(pt) > .9) stop(glue::glue("Disclosure control: {col_nm[i] has a cell contains more than 90% of the total observations."))
+      
       par_list[[i]] <- data.frame(
         param = c(paste0("b", 0:(length(betas)-1)),  "label(0)", "label(1)"),
+        varname = c("intercept", rownames(params[[i]]$coefficients)[-1], "", ""),
         value = c(betas, names(pt))
       )
     }
@@ -81,8 +105,16 @@ synp_get_param <- function(df, synds) {
       betas <- as.data.frame(coef(params[[i]]))
       values <- tidyr::pivot_longer(cols = everything(), betas, names_to ="variable", values_to = "value")
       param_combined <- expand.grid(paste0("b", 0:(ncol(betas)-1)),  rownames(betas))
+      # disclosure control check
+      tt <- table(df[,i])
+      pt <- prop.table(tt) 
+      if (any(tt < 10)) stop(glue::glue("Disclosure control: {col_nm[i]} should have minimum 10 observations per cell to proceed."))
+      dof <- length(df[,i]) - nrow(param_combined)
+      if(dof < 10) stop(glue::glue("Disclosure control: {col_nm[i]} should have minimum 10 degrees of freedom to proceed."))
+      if(max(pt) > .9) stop(glue::glue("Disclosure control: {col_nm[i] has a cell contains more than 90% of the total observations."))
       par_list[[i]] <- data.frame(
         param = paste0(param_combined$Var1, "_", param_combined$Var2),
+        varname = params[[i]]$coefnames,
         value = values[,2]
       )
     }
@@ -197,7 +229,7 @@ synp_gen_syndat <- function(par_list, n = 1000) {
       syndat[,col_nm[i]] <- factor(colnames(probs)[idx] , levels=colnames(probs))
     }
     
-    # the synthpop models spit out the betas in such an order that factor variables are behind the numerical variables... 
+    # the synthpop models spit out the betas in such an order that factor variables are behind the numerical variables... this seems to happen in numtocat.syn in the main syn function (???)
     syndat <- dplyr::relocate(syndat, where(is.factor), .after = where(is.numeric))
     
   }
