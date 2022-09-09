@@ -8,22 +8,26 @@
 #' 
 #' @return a list of data frames
 synp_get_param <- function(df, synds) {
+  # ensure the original data is a dataframe
+  # if(!is.data.frame(df))  --> tibble will not get caught
+  df <- as.data.frame(df)
+  
   # disclosure control check
   if(nrow(df) < 10) 
-    stop("Disclosure control: At least 10 observations are required.")
+    stop("Disclosure control: At least 10 observations are required.", .call=FALSE)
   
   # check that only parametric methods were used
   allowed_methods <- c("norm", "logreg", "polyreg")  
   # TODO: far future: polyr"
   used_methods <- synds$method 
   if (!all(used_methods[-1] %in% allowed_methods)) 
-    stop("Extracting method should be parametric.")
+    stop("Extracting method should be parametric.", .call=FALSE)
   
   # extract parameters
   if (is.null(synds$models)) 
-    stop("Run synthpop::syn() with argument `models = TRUE` to extract parameters")
+    stop("Run synthpop::syn() with argument `models = TRUE` to extract parameters", .call=FALSE)
   if(any(stringr::str_detect(colnames(df), "\\d"))) 
-    stop("Numbers are not allowed in the variable names. Please consider converting them into alphabet characters")
+    stop("Numbers are not allowed in the variable names. Please consider converting them into alphabet characters", .call=FALSE)
   params <- synds$models
   col_nm <- names(params)
   
@@ -39,8 +43,8 @@ synp_get_param <- function(df, synds) {
     tt <- table(first_var)
     pt <- prop.table(tt) 
     # disclosure control check
-    if (any(tt < 10)) stop(glue::glue("Disclosure control: {col_nm[1]} should have minimum 10 observations per cell to proceed."))
-    if(max(pt) > .9) stop(glue::glue("Disclosure control: {col_nm[1] has a cell contains more than 90% of the total observations."))
+    if (any(tt < 10)) stop(glue::glue("Disclosure control: {col_nm[1]} should have minimum 10 observations per cell to proceed."), .call=FALSE)
+    if(max(pt) > .9) stop(glue::glue("Disclosure control: {col_nm[1] has a cell contains more than 90% of the total observations."), .call=FALSE)
     par_list[[1]] <- data.frame(          
       param = c("prob", "label(0)", "label(1)"),               
       value = c(pt[[2]], names(pt)) 
@@ -51,15 +55,15 @@ synp_get_param <- function(df, synds) {
     tt <- table(first_var)
     pt <- prop.table(tt) 
     # disclosure control check
-    if (any(tt < 10)) stop(glue::glue("Disclosure control: {col_nm[1]} should have minimum 10 observations per cell to proceed."))
-    if(max(pt) > .9) stop(glue::glue("Disclosure control: {col_nm[1] has a cell contains more than 90% of the total observations."))
+    if (any(tt < 10)) stop(glue::glue("Disclosure control: {col_nm[1]} should have minimum 10 observations per cell to proceed."), .call=FALSE)
+    if(max(pt) > .9) stop(glue::glue("Disclosure control: {col_nm[1] has a cell contains more than 90% of the total observations."), .call=FALSE)
     par_list[[1]] <- as.data.frame(pt)
     colnames(par_list[[1]]) <- c("cat_label", "probability")
     used_methods[1] <- "polyreg"
     
   } else { # "norm" method
     if (length(unique(first_var)) <= (sqrt(nrow(df)) + 5)) 
-      warning("First variable may be categorical. Please convert dichotomous/categorical variables to a factor in order to implement `logreg`/`polyreg`.")
+      warning("First variable may be categorical. Please convert dichotomous/categorical variables to a factor in order to implement `logreg`/`polyreg`.", .call=FALSE)
     par_list[[1]] <- data.frame(
       param = c("mean", "sd"),
       value = c(mean(df[[col_nm[1]]], na.rm = TRUE), sd(df[[col_nm[1]]], na.rm = TRUE))
@@ -78,8 +82,8 @@ synp_get_param <- function(df, synds) {
       dof <- length(df[,i]) - (length(params[[i]]$beta) + 1) # number of betas + one sigma
       if(dof < 10) stop(glue::glue("Disclosure control: {col_nm[i]} should have minimum 10 degrees of freedom to proceed."))
       par_list[[i]] <- data.frame(
-        param = c(paste0("b", 0:(length(params[[i]]$beta)-1)), "sd"),
         varname = c("intercept", rownames(params[[i]]$beta)[-1], "sd"),
+        param = c(paste0("b", 0:(length(params[[i]]$beta)-1)), "sd"),
         value = c(params[[i]]$beta, params[[i]]$sigma)
       )
     }
@@ -89,14 +93,14 @@ synp_get_param <- function(df, synds) {
       # disclosure control check
       tt <- table(df[,i])
       pt <- prop.table(tt)
-      if (any(tt < 10)) stop(glue::glue("Disclosure control: {col_nm[i]} should have minimum 10 observations per cell to proceed."))
+      if (any(tt < 10)) stop(glue::glue("Disclosure control: {col_nm[i]} should have minimum 10 observations per cell to proceed."), .call=FALSE)
       dof <- length(df[,i]) - length(betas)
-      if(dof < 10) stop(glue::glue("Disclosure control: {col_nm[i]} should have minimum 10 degrees of freedom to proceed."))
-      if(max(pt) > .9) stop(glue::glue("Disclosure control: {col_nm[i] has a cell contains more than 90% of the total observations."))
+      if(dof < 10) stop(glue::glue("Disclosure control: {col_nm[i]} should have minimum 10 degrees of freedom to proceed."), .call=FALSE)
+      if(max(pt) > .9) stop(glue::glue("Disclosure control: {col_nm[i] has a cell contains more than 90% of the total observations."), .call=FALSE)
       
       par_list[[i]] <- data.frame(
-        param = c(paste0("b", 0:(length(betas)-1)),  "label(0)", "label(1)"),
         varname = c("intercept", rownames(params[[i]]$coefficients)[-1], "", ""),
+        param = c(paste0("b", 0:(length(betas)-1)),  "label(0)", "label(1)"),
         value = c(betas, names(pt))
       )
     }
@@ -108,13 +112,13 @@ synp_get_param <- function(df, synds) {
       # disclosure control check
       tt <- table(df[,i])
       pt <- prop.table(tt) 
-      if (any(tt < 10)) stop(glue::glue("Disclosure control: {col_nm[i]} should have minimum 10 observations per cell to proceed."))
+      if (any(tt < 10)) stop(glue::glue("Disclosure control: {col_nm[i]} should have minimum 10 observations per cell to proceed."), .call=FALSE)
       dof <- length(df[,i]) - nrow(param_combined)
-      if(dof < 10) stop(glue::glue("Disclosure control: {col_nm[i]} should have minimum 10 degrees of freedom to proceed."))
-      if(max(pt) > .9) stop(glue::glue("Disclosure control: {col_nm[i] has a cell contains more than 90% of the total observations."))
+      if(dof < 10) stop(glue::glue("Disclosure control: {col_nm[i]} should have minimum 10 degrees of freedom to proceed."), .call=FALSE)
+      if(max(pt) > .9) stop(glue::glue("Disclosure control: {col_nm[i] has a cell contains more than 90% of the total observations."), .call=FALSE)
       par_list[[i]] <- data.frame(
-        param = paste0(param_combined$Var1, "_", param_combined$Var2),
         varname = params[[i]]$coefnames,
+        param = paste0(param_combined$Var1, "_", param_combined$Var2),
         value = values[,2]
       )
     }
@@ -184,10 +188,10 @@ synp_gen_syndat <- function(par_list, n = 1000) {
     # xp = design matrix 
     # previously synthesized data (=predictors for the current variable)
     xp <- model.matrix(as.formula(paste("~", paste(colnames(syndat), collapse ="+"))), data = syndat)
-    betas <- as.matrix(as.numeric(cur_df[grepl("^b", cur_df[,1]), 2]))
+    betas <- as.matrix(as.numeric(cur_df[grepl("^b", cur_df[,2]), 3]))
     if (methods[i] == "norm"){
       m <- xp %*% betas 
-      s <- cur_df[cur_df[,1] == "sd", 2]
+      s <- cur_df[cur_df[,2] == "sd", 3]
       syndat[,col_nm[i]] <- rnorm(n = n, mean = m, sd = s)
     }
     if (methods[i] == "logreg"){
@@ -197,8 +201,8 @@ synp_gen_syndat <- function(par_list, n = 1000) {
       #syndat[, col_nm[i]] <- as.factor(runif(nrow(p)) <= p)
       syndat[,col_nm[i]] <- as.factor(rbinom(nrow(p), 1, p))
       
-      levels(syndat[,i]) <- c(cur_df[cur_df[,1] == "label(0)", 2], 
-                              cur_df[cur_df[,1] == "label(1)", 2])
+      levels(syndat[,i]) <- c(cur_df[cur_df[,2] == "label(0)", 3], 
+                              cur_df[cur_df[,2] == "label(1)", 3])
     }
     if (methods[i] == "polyreg"){
       # first, re-scale them to [0,1] as synthpop did (not ideal as we don't have data "xf" which synthpop uses to scale)
@@ -210,8 +214,8 @@ synp_gen_syndat <- function(par_list, n = 1000) {
       separate_cols <- stringr::str_split(cur_df$param, pattern="_", simplify = TRUE)
       cur_df$param <- separate_cols[,1]
       cur_df$category <- separate_cols[,2]
-      # exclude the first (name) column and convert it to matrix
-      betas <- as.matrix(tidyr::pivot_wider(cur_df, names_from = category, values_from = value)[,-1])
+      # exclude the varname & param columns and convert it to matrix
+      betas <- as.matrix(tidyr::pivot_wider(cur_df, names_from = category, values_from = value)[,-c(1,2)])
       # compute probabilities for each category
       probs <- matrix(NA, nrow = n, ncol= ncol(betas)+1) # storage
       for (k in 1:ncol(betas)){
