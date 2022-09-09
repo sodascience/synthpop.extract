@@ -23,6 +23,11 @@
  font-size: 17px;
 }
 
+.data{
+   font-size: 17px;
+   font-weight: bold;
+}
+
 /* Headers */
 h1{
   font-size: 18pt;

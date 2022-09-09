@@ -1,0 +1,298 @@
+---
+title: "Reproducible science using Statistics Netherlands microdata"
+author: "Kyuri Park & Erik-Jan van Kesteren"
+date: "`r format(Sys.time(), '%B %d, %Y')`"
+output: 
+  # pdf_document
+  #   toc: yes
+  #   toc_depth: '3'
+  html_document:
+    css: style.css
+    toc: yes
+    toc_depth: 3
+    toc_float: yes
+    number_sections: yes
+    theme: lumen
+    keep_md: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, 
+                      message = FALSE, 
+                      warning = FALSE, 
+                      comment = NA)
+```
+
+<div class="head">
+Through [ODISSEI](https://odissei-data.nl), researchers can get access to the microdata 
+of the Dutch national statistical agency Statistics Netherlands (CBS). This access is
+highly restricted, ensuring privacy of the inhabitants of the Netherlands.  
+However, this restriction is at odds with reproducibility, a key open science research practice: 
+analyses done using these microdatasets cannot easily be reproduced by others. In this post, we describe a workflow to enhance the reproducibility of CBS microdata analyses by using _synthetic data_.
+
+After creating your analysis on the CBS remote access (RA) environment, the general 
+procedure of the workflow is as follows:
+
+1.  Upload a code file we have prepared (`sythpop_extractor.R`) to the CBS RA environment.
+2.  Estimate a parametric generative model for the dataset using the well-known `synthpop` 
+    package in R.
+3.  Use our code to extract parameters of this generative model and ensure disclosure control according to 
+    the [CBS output guidelines](https://www.cbs.nl/en-gb/our-services/customised-services-microdata/microdata-conducting-your-own-research/export-of-information).
+3.  Export the disclosure controlled parameters to an `xlsx` file.
+4.  Offer the `xlsx` file to the microdata team for output control.
+5.  Outside the CBS RA environment, download the `xlsx` file and load the parameters back in R.
+6.  Generate synthetic data based on the model parameters.
+7.  Run the original analysis on the synthetic data and report differences.
+
+Below, we perform this procedure using an example analysis.
+</div>
+
+<hr>
+
+# Preparation
+Upload a code file we have prepared (`sythpop_extractor.R`) to the CBS RA environment.
+Then, load the following packages and import the functions (i.e., `synp_get_param`, `synp_read_sheets`, `synp_gen_syndat`) from the `synthpop_extractor.R` file. 
+
+```{r}
+## load packages
+library(readxl)
+library(writexl)
+library(synthpop)
+
+## import the functions
+source("synthpop_extractor.R")
+
+## packages needed for this example analysis
+library(tidyverse)
+library(skimr)
+library(lavaan)
+library(lavaanPlot)
+```
+
+
+<p class="data">The example dataset </p>
+For our example, we will be performing [factor analysis](https://en.wikipedia.org/wiki/Factor_analysis) for the big five personality traits. Note that this is merely an example analysis, which can be easily performed using public data; a CBS RA environment analysis will likely be different!
+
+We use data from [kaggle](https://www.kaggle.com/datasets/tunguz/big-five-personality-test)
+instead of real microdata. The dataset we use contains more than a million (1,015,342) answers on the [Big Five personality traits](https://en.wikipedia.org/wiki/Big_Five_personality_traits), collected from 2016 to 2018. It includes 50 questions, which participants rate by themselves on a five-point-Likert scale where a *1* represents *complete disagreement*, a *3* for a *neutral* response and a *5* for *full agreement*. For ease of computation, here we will analyze only a subset
+of the dataset (e.g., 100,000 answers for 25 questions). The cleaned dataset (`big5.RDS`) can be found in the `data` folder of the repository [here](https://github.com/sodascience/repro_data_cbs) (or via this [direct download link](https://github.com/sodascience/repro_data_cbs/raw/main/data/big5.RDS)).
+
+<details>
+  <summary>***See the set of questions used***.</summary>
+  <br>
+**EXT = Extraversion**
+
+- EXT1 I am the life of the party.
+- EXT2 I don’t talk a lot.
+- EXT3 I feel comfortable around people.
+- EXT4 I keep in the background.
+- EXT5 I start conversations.
+
+**EST = Emotional Stability**
+
+- EST1 I get stressed out easily.
+- EST2 I am relaxed most of the time.
+- EST3 I worry about things.
+- EST4 I seldom feel blue.
+- EST5 I am easily disturbed.
+
+**AGR = Agreeableness**
+
+- AGR1 I feel little concern for others.
+- AGR2 I am interested in people.
+- AGR3 I insult people.
+- AGR4 I sympathize with others’ feelings.
+- AGR5 I am not interested in other people’s problems.
+
+**CSN = Conscientiousness**
+
+- CSN1 I am always prepared.
+- CSN2 I leave my belongings around.
+- CSN3 I pay attention to details.
+- CSN4 I make a mess of things.
+- CSN5 I get chores done right away.
+
+**OPN = Openness to new experiences**
+
+- OPN1 I have a rich vocabulary.
+- OPN2 I have difficulty understanding abstract ideas.
+- OPN3 I have a vivid imagination.
+- OPN4 I am not interested in abstract ideas.
+- OPN5 I have excellent ideas.
+
+</details> 
+<br>
+```{r load data}
+## load data
+big5 <- readRDS("./data/big5.RDS")
+```
+
+Let's take a quick look at the data summary.
+
+```{r, eval=FALSE}
+## data summary
+skim(big5)
+```
+<details>
+  <summary>***See the data summary.***</summary>
+```{r, echo=FALSE, eval=TRUE}
+skim(big5)
+```
+</details> 
+<br>
+
+Run the factor analysis on original data.
+```{r}
+## lavaan model formulae
+CFA_model <- '
+EXTRA =~ EXT1 + EXT2 + EXT3 + EXT4 + EXT5 
+AGREE =~ AGR1 + AGR2 + AGR3 + AGR4 + AGR5 
+EMO   =~ EST1 + EST2 + EST3 + EST4 + EST5 
+OPEN  =~ OPN1 + OPN2 + OPN3 + OPN4 + OPN5
+CON   =~ CSN1 + CSN2 + CSN3 + CSN4 + CSN5 
+'
+
+## run CFA on original data
+original_CFA <- cfa(model = CFA_model, data = big5, std.lv=TRUE)
+## assess the fit indices
+fitMeasures(original_CFA, fit.measures = c("cfi","srmr", "rmsea"))
+```
+<details>
+  <summary>***Check the CFA (on original data) results in detail.***</summary>
+```{r, echo=FALSE, eval=TRUE}
+ summary(original_CFA, fit.measures = TRUE, standardized = TRUE)
+```
+</details>
+<br>
+
+```{r, eval=FALSE}
+## plot the CFA model on original data
+lavaanPlot(model = original_CFA, node_options = list(shape = "box", fontname = "Helvetica"), edge_options = list(color = "grey"), coefs = TRUE, graph_options = list(layout = "circo"))
+```
+<details>
+  <summary>***See the plot of factor model.***</summary>
+```{r, echo=FALSE, eval=TRUE}
+lavaanPlot(model = original_CFA, node_options = list(shape = "box", fontname = "Helvetica"), edge_options = list(color = "grey"), coefs = TRUE, graph_options = list(layout = "circo"))
+```
+</details> 
+<br>
+
+# Estimate parametric generative model
+As the first step to generate synthetic data, we use the `synthpop` package to estimate a parametric model.
+
+-   Due to an issue with the `synthpop` package, numbers are not allowed to be in the variable names. The variable names can only contain alphabetical characters. Here we choose to change the numbers to *Roman numerals*. You are free to switch them to anything sensible to you though, as long as they consist only of characters.
+-   Once the variable names are sorted, we get the `synds` object using the `synthpop` package. We only support the methods `"norm"`(for continuous variables), `"logreg"`(for binary variables), and `"polyreg"` (for categorical variables). Make sure to set `models=TRUE` when calling the `syn` function.
+
+```{r, results='hide'}
+## convert the number in the variable names to Roman numeral
+colnames(big5) <- c("EXT_I", "EXT_II", "EXT_III", "EXT_IV", "EXT_V", 
+                    "EST_I", "EST_II", "EST_III", "EST_IV",  "EST_V", 
+                    "AGR_I", "AGR_II", "AGR_III", "AGR_IV",  "AGR_V", 
+                    "CSN_I", "CSN_II", "CSN_III", "CSN_IV", "CSN_V", 
+                    "OPN_I", "OPN_II", "OPN_III", "OPN_IV", "OPN_V")
+## get the synds object
+synds <- syn(big5, method="norm", models=TRUE)
+```
+
+# Extract parameters 
+Next, we use `synp_get_param` function, which takes the data and `synds` object as arguments to extract the parameters of the generative models. `synp_get_param` function checks if it meets the disclosure control conditions according to the [CBS output guidelines](https://www.cbs.nl/en-gb/our-services/customised-services-microdata/microdata-conducting-your-own-research/export-of-information).
+
+```{r}
+## extract parameters and store them as "model_par"
+model_par <- synp_get_param(big5, synds)
+```
+
+# Save to Excel
+We export the disclosure controlled parameters to an `xlsx` file using `writexl` package: `write_xlsx(list of dataframes, filepath)`. 
+```{r}
+## export to Excel
+write_xlsx(model_par, "big5.xlsx")
+```
+
+# Export from CBS
+We offer the `xlsx` file to the microdata team for output control.
+When permitted, we export the `xlsx` file from the CBS environment through the regular output check and store it on our local device.
+
+# Read `xlsx` file into R
+Outside the CBS RA environment, download the `xlsx` file and load the parameters back in R using `synp_read_sheets` function: `synp_read_sheets(filepath)`.
+```{r}
+## read in the parameters
+parameters <- synp_read_sheets("big5.xlsx")
+```
+
+# Generate synthetic data
+We can generate the synthetic data using `synp_gen_syndat` function: `synp_gen_syndat(list of parameters, n = sample size)`.
+```{r}
+## generate synthetic data
+syndat <- synp_gen_syndat(parameters, n = nrow(big5))
+```
+```{r, eval=FALSE}
+## check the synthetic data
+head(syndat)
+```
+<details>
+  <summary>***Check the synthetic data.***</summary>
+```{r, echo=FALSE, eval=TRUE}
+head(syndat)
+```
+</details>
+<br>
+
+# Run analysis on synthetic data 
+We perform the same analysis (i.e., confirmatory factor analysis) on the synthesized data and compare the results to see if they lead to more or less the same conclusion.
+```{r}
+## lavaan model formulae
+CFA_model <- '
+EXTRA =~ EXT_I + EXT_II + EXT_III + EXT_IV + EXT_V 
+AGREE =~ AGR_I + AGR_II + AGR_III + AGR_IV + AGR_V 
+EMO   =~ EST_I + EST_II + EST_III + EST_IV + EST_V 
+OPEN  =~ OPN_I + OPN_II + OPN_III + OPN_IV + OPN_V
+CON   =~ CSN_I + CSN_II + CSN_III + CSN_IV + CSN_V 
+'
+## run CFA on synthetic data
+syn_CFA <- cfa(model = CFA_model, data = syndat, std.lv=TRUE)
+## assess the fit indices
+fitMeasures(syn_CFA, fit.measures = c("cfi","srmr", "rmsea"))
+```
+<details>
+  <summary>***Check the CFA (on synthetic data) results in detail.***</summary>
+```{r, echo=FALSE, eval=TRUE}
+summary(syn_CFA, fit.measures = TRUE, standardized = TRUE)
+```
+</details>
+
+```{r, eval=FALSE}
+## plot the CFA model on synthetic data
+lavaanPlot(model = syn_CFA, node_options = list(shape = "box", fontname = "Helvetica"), edge_options = list(color = "grey"), coefs = TRUE, graph_options = list(layout = "circo"))
+```
+
+<details>
+  <summary>***See the plot of factor model.***</summary>
+```{r, echo=FALSE, eval=TRUE}
+lavaanPlot(model = syn_CFA, node_options = list(shape = "box", fontname = "Helvetica"), edge_options = list(color = "grey"), coefs = TRUE, graph_options = list(layout = "circo"))
+```
+</details> 
+
+<hr>
+As seen below in the table, it is observed that the resulting estimates from the factor analysis on the synthetic data closely coincide with those from the analysis on the original data.
+
+```{r echo=FALSE}
+original_est <- parameterEstimates(original_CFA) %>% 
+  filter(grepl('4|5', rhs) & op == '=~')  %>% 
+  dplyr::select(est, se) %>% 
+  rename(Original_estimate = est, Original_se = se)
+
+parameterEstimates(syn_CFA) %>% 
+  filter(grepl('V', rhs) & op == '=~') %>% 
+  dplyr::select(lhs:se) %>% 
+  unite("Formula", lhs:rhs, sep=" ") %>% 
+  rename(Synthetic_estimate = est, Synthetic_se = se) %>% 
+  cbind(original_est) %>% 
+  relocate(Formula, Synthetic_estimate, Original_estimate, Synthetic_se, Original_se) %>% 
+  mutate(across(where(is.numeric), round, 3)) %>% 
+  knitr::kable(align = "lcccc", format="html") %>% 
+  kableExtra::kable_styling(bootstrap_options = c("striped", "hover", "condensed"))
+```
+
+
+
