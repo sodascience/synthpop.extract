@@ -8,14 +8,23 @@ source("synthpop_extractor.R")
 exampledata <- read.csv("Birthweight.csv")
 
 # create categorical variables
+# polydat <- data.frame(as.factor(ifelse(exampledata$mnocig < 1, '0',
+#                                        ifelse(exampledata$mnocig < 10, '<10',
+#                                               ifelse(exampledata$mnocig < 26, '<25','25+')))))
+# colnames(polydat) <- "mnocig"
+# 
+# polydat$fnocig <- as.factor(ifelse(exampledata$fnocig < 1, '0',
+#                                    ifelse(exampledata$fnocig < 10, '<10',
+#                                           ifelse(exampledata$fnocig < 26, '<25','25+'))))
+
+## due to disclosure control, merge two categories
 polydat <- data.frame(as.factor(ifelse(exampledata$mnocig < 1, '0',
-                                       ifelse(exampledata$mnocig < 10, '<10',
-                                              ifelse(exampledata$mnocig < 26, '<25','25+')))))
+                                       ifelse(exampledata$mnocig < 15, '<15', '15+'))))
 colnames(polydat) <- "mnocig"
 
 polydat$fnocig <- as.factor(ifelse(exampledata$fnocig < 1, '0',
-                                   ifelse(exampledata$fnocig < 10, '<10',
-                                          ifelse(exampledata$fnocig < 26, '<25','25+'))))
+                                   ifelse(exampledata$fnocig < 15, '<15', '15+')))
+
 # check the dataset
 table(polydat$mnocig)
 table(polydat$fnocig)
