@@ -21,6 +21,7 @@ knitr::opts_chunk$set(echo = TRUE,
                       message = FALSE, 
                       warning = FALSE, 
                       comment = NA)
+library(fontawesome)
 ```
 
 <div class="head">
@@ -33,16 +34,18 @@ analyses done using these microdatasets cannot easily be reproduced by others. I
 After creating your analysis on the CBS remote access (RA) environment, the general 
 procedure of the workflow is as follows:
 
-1.  Upload a code file we have prepared (`sythpop_extractor.R`) to the CBS RA environment.
-2.  Estimate a parametric generative model for the dataset using the well-known `synthpop` 
+1.  ![cbs](img/cbs-logo.ico){width=22px} Upload a code file we have prepared (`sythpop_extractor.R`) to the CBS RA environment.
+2.  ![cbs](img/cbs-logo.ico){width=22px} Estimate a parametric generative model for the dataset using the well-known `synthpop` 
     package in R.
-3.  Use our code to extract parameters of this generative model and ensure disclosure control according to 
+3.  ![cbs](img/cbs-logo.ico){width=22px} Use our code to extract parameters of this generative model and ensure disclosure control according to 
     the [CBS output guidelines](https://www.cbs.nl/en-gb/our-services/customised-services-microdata/microdata-conducting-your-own-research/export-of-information).
-3.  Export the disclosure controlled parameters to an `xlsx` file.
-4.  Offer the `xlsx` file to the microdata team for output control.
-5.  Outside the CBS RA environment, download the `xlsx` file and load the parameters back in R.
-6.  Generate synthetic data based on the model parameters.
-7.  Run the original analysis on the synthetic data and report differences.
+3.  ![cbs](img/cbs-logo.ico){width=22px} Export the disclosure controlled parameters to an `xlsx` file.
+4.  ![cbs](img/cbs-logo.ico){width=22px} Offer the `xlsx` file to the microdata team for output control.
+5.  `r fa("computer", fill="#159cba")` Outside the CBS RA environment, download the `xlsx` file and load the parameters back in R.
+6.  `r fa("computer", fill="#158cba")` Generate synthetic data based on the model parameters.
+7.  `r fa("computer", fill="#158cba")` Run the original analysis on the synthetic data and report differences.
+
+<p class="note">![cbs](img/cbs-logo.ico){width=17px}: perform in CBS RA environment &nbsp; `r fa("computer", fill="#158cba")` : perform in your local device</p>
 
 Below, we perform this procedure using an example analysis.
 </div>
