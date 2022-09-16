@@ -8,13 +8,10 @@
 #' 
 #' @return a list of data frames
 synp_get_param <- function(df, synds) {
-  # ensure the original data is a dataframe
-  # if(!is.data.frame(df))  --> tibble will not get caught
-  df <- as.data.frame(df)
   
   # disclosure control check
   if(nrow(df) < 10) 
-    stop("Disclosure control: At least 10 observations are required.", .call=FALSE)
+    stop("Disclosure control (as per CBS guideline #1): At least 10 observations are required.", .call=FALSE)
   
   # check that only parametric methods were used
   allowed_methods <- c("norm", "logreg", "polyreg")  
@@ -31,7 +28,7 @@ synp_get_param <- function(df, synds) {
   params <- synds$models
   col_nm <- names(params)
   
-  # create exportable storage format for betas and sigma
+  # create exportable storage format for parameters
   par_list <- list()
   
   # for the first variable, 
@@ -43,8 +40,8 @@ synp_get_param <- function(df, synds) {
     tt <- table(first_var)
     pt <- prop.table(tt) 
     # disclosure control check
-    if (any(tt < 10)) stop(glue::glue("Disclosure control: {col_nm[1]} should have minimum 10 observations per cell to proceed."), .call=FALSE)
-    if(max(pt) > .9) stop(glue::glue("Disclosure control: {col_nm[1] has a cell contains more than 90% of the total observations."), .call=FALSE)
+    if (any(tt < 10)) stop(glue::glue("Disclosure control (as per CBS guideline #1): {col_nm[1]} should have minimum 10 observations per cell to proceed."), .call=FALSE)
+    # if(max(pt) > .9) stop(glue::glue("Disclosure control: {col_nm[1] has a cell contains more than 90% of the total observations."), .call=FALSE)
     par_list[[1]] <- data.frame(          
       param = c("prob", "label(0)", "label(1)"),               
       value = c(pt[[2]], names(pt)) 
@@ -55,8 +52,8 @@ synp_get_param <- function(df, synds) {
     tt <- table(first_var)
     pt <- prop.table(tt) 
     # disclosure control check
-    if (any(tt < 10)) stop(glue::glue("Disclosure control: {col_nm[1]} should have minimum 10 observations per cell to proceed."), .call=FALSE)
-    if(max(pt) > .9) stop(glue::glue("Disclosure control: {col_nm[1] has a cell contains more than 90% of the total observations."), .call=FALSE)
+    if (any(tt < 10)) stop(glue::glue("Disclosure control (as per CBS guideline #1): {col_nm[1]} should have minimum 10 observations per cell to proceed."), .call=FALSE)
+    # if(max(pt) > .9) stop(glue::glue("Disclosure control: {col_nm[1] has a cell contains more than 90% of the total observations."), .call=FALSE)
     par_list[[1]] <- as.data.frame(pt)
     colnames(par_list[[1]]) <- c("cat_label", "probability")
     used_methods[1] <- "polyreg"
@@ -79,8 +76,8 @@ synp_get_param <- function(df, synds) {
     
     if(used_methods[[i]]=="norm"){
       # disclosure control check
-      dof <- length(df[,i]) - (length(params[[i]]$beta) + 1) # number of betas + one sigma
-      if(dof < 10) stop(glue::glue("Disclosure control: {col_nm[i]} should have minimum 10 degrees of freedom to proceed."))
+      dof <- nrow(df) - (length(params[[i]]$beta)) # number of betas 
+      if(dof < 10) stop(glue::glue("Disclosure control (as per CBS guideline #2): {col_nm[i]} should have minimum 10 degrees of freedom to proceed."))
       par_list[[i]] <- data.frame(
         varname = c("intercept", rownames(params[[i]]$beta)[-1], "sd"),
         param = c(paste0("b", 0:(length(params[[i]]$beta)-1)), "sd"),
@@ -93,10 +90,10 @@ synp_get_param <- function(df, synds) {
       # disclosure control check
       tt <- table(df[,i])
       pt <- prop.table(tt)
-      if (any(tt < 10)) stop(glue::glue("Disclosure control: {col_nm[i]} should have minimum 10 observations per cell to proceed."), .call=FALSE)
-      dof <- length(df[,i]) - length(betas)
-      if(dof < 10) stop(glue::glue("Disclosure control: {col_nm[i]} should have minimum 10 degrees of freedom to proceed."), .call=FALSE)
-      if(max(pt) > .9) stop(glue::glue("Disclosure control: {col_nm[i] has a cell contains more than 90% of the total observations."), .call=FALSE)
+      if (any(tt < 10)) stop(glue::glue("Disclosure control (as per CBS guideline #1): {col_nm[i]} should have minimum 10 observations per cell to proceed."), .call=FALSE)
+      dof <- nrow(df)  - length(betas)
+      if(dof < 10) stop(glue::glue("Disclosure control (as per CBS guideline #2): {col_nm[i]} should have minimum 10 degrees of freedom to proceed."), .call=FALSE)
+      # if(max(pt) > .9) stop(glue::glue("Disclosure control: {col_nm[i] has a cell contains more than 90% of the total observations."), .call=FALSE)
       
       par_list[[i]] <- data.frame(
         varname = c("intercept", rownames(params[[i]]$coefficients)[-1], "", ""),
@@ -112,10 +109,10 @@ synp_get_param <- function(df, synds) {
       # disclosure control check
       tt <- table(df[,i])
       pt <- prop.table(tt) 
-      if (any(tt < 10)) stop(glue::glue("Disclosure control: {col_nm[i]} should have minimum 10 observations per cell to proceed."), .call=FALSE)
-      dof <- length(df[,i]) - nrow(param_combined)
-      if(dof < 10) stop(glue::glue("Disclosure control: {col_nm[i]} should have minimum 10 degrees of freedom to proceed."), .call=FALSE)
-      if(max(pt) > .9) stop(glue::glue("Disclosure control: {col_nm[i] has a cell contains more than 90% of the total observations."), .call=FALSE)
+      if (any(tt < 10)) stop(glue::glue("Disclosure control (as per CBS guideline #1): {col_nm[i]} should have minimum 10 observations per cell to proceed."), .call=FALSE)
+      dof <- nrow(df) - nrow(param_combined)
+      if(dof < 10) stop(glue::glue("Disclosure control (as per CBS guideline #2): {col_nm[i]} should have minimum 10 degrees of freedom to proceed."), .call=FALSE)
+      # if(max(pt) > .9) stop(glue::glue("Disclosure control: {col_nm[i] has a cell contains more than 90% of the total observations."), .call=FALSE)
       par_list[[i]] <- data.frame(
         varname = params[[i]]$coefnames,
         param = paste0(param_combined$Var1, "_", param_combined$Var2),
