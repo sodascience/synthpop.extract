@@ -11,9 +11,9 @@
 
 <meta name="author" content="Kyuri Park &amp; Erik-Jan van Kesteren" />
 
-<meta name="date" content="2022-08-11" />
+<meta name="date" content="2022-09-09" />
 
-<title>Reproducible CBS data sets using the synthpop package</title>
+<title>Reproducible science using Statistics Netherlands microdata</title>
 
 <script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
 // be compatible with the behavior of Pandoc < 2.8).
@@ -2791,6 +2791,7 @@ if (window.hljs) {
 
 
 
+
 <style type="text/css">#header {
 padding: 20px;
 text-align: center;
@@ -2809,6 +2810,10 @@ margin: 20px;
 }
 .head{
 font-size: 17px;
+}
+.data{
+font-size: 17px;
+font-weight: bold;
 }
 
 h1{
@@ -2841,6 +2846,9 @@ button.code-folding-btn:focus {
 }
 summary {
   display: list-item;
+}
+details > summary > p:only-child {
+  display: inline;
 }
 pre code {
   padding: 0;
@@ -2997,63 +3005,88 @@ div.tocify {
 
 
 
-<h1 class="title toc-ignore">Reproducible CBS data sets using the
-synthpop package</h1>
+<h1 class="title toc-ignore">Reproducible science using Statistics
+Netherlands microdata</h1>
 <h4 class="author">Kyuri Park &amp; Erik-Jan van Kesteren</h4>
-<h4 class="date">August 11, 2022</h4>
+<h4 class="date">September 09, 2022</h4>
 
 </div>
 
 
 <div class="head">
-<p>We are trying to establish a procedure for exporting synthetic
-datasets based on real datasets at Statistics Netherlands (<a href="https://www.cbs.nl/en-gb">CBS</a>). We want to use this synthetic
-data to make research reproducible. The general procedure is as
-follows:</p>
+<p>Through <a href="https://odissei-data.nl">ODISSEI</a>, researchers
+can get access to the microdata of the Dutch national statistical agency
+Statistics Netherlands (CBS). This access is highly restricted, ensuring
+privacy of the inhabitants of the Netherlands.<br />
+However, this restriction is at odds with reproducibility, a key open
+science research practice: analyses done using these microdatasets
+cannot easily be reproduced by others. In this post, we describe a
+workflow to enhance the reproducibility of CBS microdata analyses by
+using <em>synthetic data</em>.</p>
+<p>After creating your analysis on the CBS remote access (RA)
+environment, the general procedure of the workflow is as follows:</p>
 <ol style="list-style-type: decimal">
-<li>Extract parameters of models based on the original data using the
-<code>synthpop</code> package.</li>
-<li>Export the parameters to Excel and store them in an xlsx file.</li>
-<li>Import the xlsx file from the CBS environment into your local
-device.</li>
-<li>Read in the excel file and load the parameters back in R.</li>
+<li>Upload a code file we have prepared
+(<code>sythpop_extractor.R</code>) to the CBS RA environment.</li>
+<li>Estimate a parametric generative model for the dataset using the
+well-known <code>synthpop</code> package in R.</li>
+<li>Use our code to extract parameters of this generative model and
+ensure disclosure control according to the <a href="https://www.cbs.nl/en-gb/our-services/customised-services-microdata/microdata-conducting-your-own-research/export-of-information">CBS
+output guidelines</a>.</li>
+<li>Export the disclosure controlled parameters to an <code>xlsx</code>
+file.</li>
+<li>Offer the <code>xlsx</code> file to the microdata team for output
+control.</li>
+<li>Outside the CBS RA environment, download the <code>xlsx</code> file
+and load the parameters back in R.</li>
 <li>Generate synthetic data based on the model parameters.</li>
+<li>Run the original analysis on the synthetic data and report
+differences.</li>
 </ol>
-<p>Here we will illustrate each step of the procedure using an example
-data set.</p>
+<p>Below, we perform this procedure using an example analysis.</p>
 </div>
 <hr>
 <div id="preparation" class="section level1" number="1">
 <h1><span class="header-section-number">1</span> Preparation</h1>
-<p>First, we need to load the following packages and import the
-functions (i.e., <code>synp_get_param</code>,
-<code>synp_read_sheets</code>, <code>synp_gen_syndat</code>) from the
-<code>synthpop_extractor.R</code> file.</p>
+<p>Upload a code file we have prepared
+(<code>sythpop_extractor.R</code>) to the CBS RA environment. Then, load
+the following packages and import the functions (i.e.,
+<code>synp_get_param</code>, <code>synp_read_sheets</code>,
+<code>synp_gen_syndat</code>) from the <code>synthpop_extractor.R</code>
+file.</p>
 <pre class="r"><code>## load packages
-library(tidyverse)
-library(skimr)
 library(readxl)
 library(writexl)
 library(synthpop)
-library(lavaan)
-library(lavaanPlot)
 
 ## import the functions
-source(&quot;synthpop_extractor.R&quot;)</code></pre>
-</div>
-<div id="example-dataset" class="section level1" number="2">
-<h1><span class="header-section-number">2</span> Example dataset</h1>
-<p><code>big5_kag.csv</code> is a <a href="https://en.wikipedia.org/wiki/Big_Five_personality_traits">Big
-Five personality traits</a> data set found on <a href="https://www.kaggle.com/datasets/tunguz/big-five-personality-test">kaggle</a>.
-It contains more than a million (1,015,342) answers collected from 2016
-to 2018. It includes 50 questions, which participants rate by themselves
-on a five-point-Likert scale where a <em>1</em> represents <em>complete
-disagreement</em>, a <em>3</em> for a <em>neutral</em> response and a
-<em>5</em> for <em>full agreement</em>. For ease of computation, here we
-will analyze only a subset of the dataset (e.g., 100,000 answers for 25
-questions). The cleaned dataset can be found in the <code>data</code>
-folder (<code>big5.RDS</code>) and the code for cleaning up can be found
-in <code>process_rawdata.R</code> file.</p>
+source(&quot;synthpop_extractor.R&quot;)
+
+## packages needed for this example analysis
+library(tidyverse)
+library(skimr)
+library(lavaan)
+library(lavaanPlot)</code></pre>
+<p class="data">
+The example dataset
+</p>
+<p>For our example, we will be performing <a href="https://en.wikipedia.org/wiki/Factor_analysis">factor analysis</a>
+for the big five personality traits. Note that this is merely an example
+analysis, which can be easily performed using public data; a CBS RA
+environment analysis will likely be different!</p>
+<p>We use data from <a href="https://www.kaggle.com/datasets/tunguz/big-five-personality-test">kaggle</a>
+instead of real microdata. The dataset we use contains more than a
+million (1,015,342) answers on the <a href="https://en.wikipedia.org/wiki/Big_Five_personality_traits">Big
+Five personality traits</a>, collected from 2016 to 2018. It includes 50
+questions, which participants rate by themselves on a five-point-Likert
+scale where a <em>1</em> represents <em>complete disagreement</em>, a
+<em>3</em> for a <em>neutral</em> response and a <em>5</em> for <em>full
+agreement</em>. For ease of computation, here we will analyze only a
+subset of the dataset (e.g., 100,000 answers for 25 questions). The
+cleaned dataset (<code>big5.RDS</code>) can be found in the
+<code>data</code> folder of the repository <a href="https://github.com/sodascience/repro_data_cbs">here</a> (or via
+this <a href="https://github.com/sodascience/repro_data_cbs/raw/main/data/big5.RDS">direct
+download link</a>).</p>
 <details>
 <summary>
 <strong><em>See the set of questions used</em></strong>.
@@ -3149,17 +3182,17 @@ skim(big5)</code></pre>
 <p><strong>Variable type: numeric</strong></p>
 <table>
 <colgroup>
-<col width="12%" />
-<col width="9%" />
-<col width="12%" />
+<col width="18%" />
+<col width="13%" />
+<col width="18%" />
+<col width="6%" />
+<col width="6%" />
 <col width="4%" />
-<col width="4%" />
-<col width="2%" />
-<col width="3%" />
-<col width="3%" />
-<col width="3%" />
-<col width="4%" />
-<col width="37%" />
+<col width="5%" />
+<col width="5%" />
+<col width="5%" />
+<col width="6%" />
+<col width="8%" />
 </colgroup>
 <thead>
 <tr class="header">
@@ -3507,26 +3540,23 @@ skim(big5)</code></pre>
 </details>
 <p><br></p>
 </div>
-<div id="extract-model-parameters" class="section level1" number="3">
-<h1><span class="header-section-number">3</span> Extract model
-parameters</h1>
-<p>As the first step to generate synthetic data, we extract the model
-parameters.</p>
+<div id="estimate-parametric-generative-model" class="section level1" number="2">
+<h1><span class="header-section-number">2</span> Estimate parametric
+generative model</h1>
+<p>As the first step to generate synthetic data, we use the
+<code>synthpop</code> package to estimate a parametric model.</p>
 <ul>
-<li>Note that numbers are not allowed to be in the variable names. The
-variable names can only contain alphabetical characters. Here I choose
-to change the numbers to <em>Roman numerals</em>. You are free to switch
-them to anything sensible to you though, as long as they consist only of
-characters.</li>
-<li>Once the variable names are sorted, get the <code>synds</code>
-object using using <code>synthpop</code> package. Currently, we only
-support method <code>&quot;norm&quot;</code> (for normally-distributed continuous
-variables) and <code>&quot;logreg&quot;</code>(for binary variables). Make sure
-you set <code>models=TRUE</code> when calling <code>syn</code>
-function.</li>
-<li>Next, use <code>synp_get_param</code> function, which takes the data
-and <code>synds</code> object as arguments to extract model
-parameters.</li>
+<li>Due to an issue with the <code>synthpop</code> package, numbers are
+not allowed to be in the variable names. The variable names can only
+contain alphabetical characters. Here we choose to change the numbers to
+<em>Roman numerals</em>. You are free to switch them to anything
+sensible to you though, as long as they consist only of characters.</li>
+<li>Once the variable names are sorted, we get the <code>synds</code>
+object using the <code>synthpop</code> package. We only support the
+methods <code>&quot;norm&quot;</code>(for continuous variables),
+<code>&quot;logreg&quot;</code>(for binary variables), and <code>&quot;polyreg&quot;</code>
+(for categorical variables). Make sure to set <code>models=TRUE</code>
+when calling the <code>syn</code> function.</li>
 </ul>
 <pre class="r"><code>## convert the number in the variable names to Roman numeral
 colnames(big5) &lt;- c(&quot;EXT_I&quot;, &quot;EXT_II&quot;, &quot;EXT_III&quot;, &quot;EXT_IV&quot;, &quot;EXT_V&quot;, 
@@ -3536,38 +3566,44 @@ colnames(big5) &lt;- c(&quot;EXT_I&quot;, &quot;EXT_II&quot;, &quot;EXT_III&quot
                     &quot;OPN_I&quot;, &quot;OPN_II&quot;, &quot;OPN_III&quot;, &quot;OPN_IV&quot;, &quot;OPN_V&quot;)
 ## get the synds object
 synds &lt;- syn(big5, method=&quot;norm&quot;, models=TRUE)</code></pre>
-<pre><code>Warning: In your synthesis there are numeric variables with 5 or fewer levels: EXT_II, EXT_IV, EST_I, EST_III, EST_V, AGR_I, AGR_III, AGR_V, CSN_II, CSN_IV, OPN_II, OPN_IV.
-Consider changing them to factors. You can do it using parameter &#39;minnumlevels&#39;.
-
-Synthesis
------------
- EXT_I EXT_II EXT_III EXT_IV EXT_V EST_I EST_II EST_III EST_IV EST_V
- AGR_I AGR_II AGR_III AGR_IV AGR_V CSN_I CSN_II CSN_III CSN_IV CSN_V
- OPN_I OPN_II OPN_III OPN_IV OPN_V</code></pre>
+</div>
+<div id="extract-parameters" class="section level1" number="3">
+<h1><span class="header-section-number">3</span> Extract parameters</h1>
+<p>Next, we use <code>synp_get_param</code> function, which takes the
+data and <code>synds</code> object as arguments to extract the
+parameters of the generative models. <code>synp_get_param</code>
+function checks if it meets the disclosure control conditions according
+to the <a href="https://www.cbs.nl/en-gb/our-services/customised-services-microdata/microdata-conducting-your-own-research/export-of-information">CBS
+output guidelines</a>.</p>
 <pre class="r"><code>## extract parameters and store them as &quot;model_par&quot;
 model_par &lt;- synp_get_param(big5, synds)</code></pre>
 </div>
-<div id="save-to-excel-export-from-cbs" class="section level1" number="4">
-<h1><span class="header-section-number">4</span> Save to Excel &amp;
-Export from CBS</h1>
-<p>We export the model parameters to Excel using <code>writexl</code>
-package: <code>write_xlsx(list of dataframes, filepath)</code>. Then,
-you would be able to export the xlsx file from the CBS environment
-through the regular output check and store it on your local device.</p>
+<div id="save-to-excel" class="section level1" number="4">
+<h1><span class="header-section-number">4</span> Save to Excel</h1>
+<p>We export the disclosure controlled parameters to an
+<code>xlsx</code> file using <code>writexl</code> package:
+<code>write_xlsx(list of dataframes, filepath)</code>.</p>
 <pre class="r"><code>## export to Excel
 write_xlsx(model_par, &quot;big5.xlsx&quot;)</code></pre>
 </div>
-<div id="read-xlsx-file-into-r" class="section level1" number="5">
-<h1><span class="header-section-number">5</span> Read xlsx file into
-R</h1>
-<p>We read in the model parameters from xlsx file using
-<code>synp_read_sheets</code> function:
-<code>synp_read_sheets(filepath)</code>.</p>
+<div id="export-from-cbs" class="section level1" number="5">
+<h1><span class="header-section-number">5</span> Export from CBS</h1>
+<p>We offer the <code>xlsx</code> file to the microdata team for output
+control. When permitted, we export the <code>xlsx</code> file from the
+CBS environment through the regular output check and store it on our
+local device.</p>
+</div>
+<div id="read-xlsx-file-into-r" class="section level1" number="6">
+<h1><span class="header-section-number">6</span> Read <code>xlsx</code>
+file into R</h1>
+<p>Outside the CBS RA environment, download the <code>xlsx</code> file
+and load the parameters back in R using <code>synp_read_sheets</code>
+function: <code>synp_read_sheets(filepath)</code>.</p>
 <pre class="r"><code>## read in the parameters
 parameters &lt;- synp_read_sheets(&quot;big5.xlsx&quot;)</code></pre>
 </div>
-<div id="generate-synthetic-data" class="section level1" number="6">
-<h1><span class="header-section-number">6</span> Generate synthetic
+<div id="generate-synthetic-data" class="section level1" number="7">
+<h1><span class="header-section-number">7</span> Generate synthetic
 data</h1>
 <p>We can generate the synthetic data using <code>synp_gen_syndat</code>
 function:
@@ -3580,44 +3616,44 @@ head(syndat)</code></pre>
 <summary>
 <strong><em>Check the synthetic data.</em></strong>
 </summary>
-<pre><code>       EXT_I     EXT_II  EXT_III    EXT_IV     EXT_V    EST_I   EST_II
-1 1.87257829  3.7167952 4.668687 3.0306794 3.9132042 3.691024 5.320570
-2 0.06829362  1.1089181 1.717700 2.0175799 0.7980846 3.346783 2.623079
-3 3.18405229  4.1830929 4.462567 5.4888323 4.0448206 2.726745 4.506192
-4 1.32535679  2.8293457 0.994943 3.0348264 4.0683193 2.351272 2.635679
-5 2.35715468 -0.2693569 3.048855 0.8256115 4.1231517 4.340402 5.156813
-6 3.05218539  4.1007227 4.022406 2.7484498 3.9832705 3.991956 5.793566
-    EST_III    EST_IV    EST_V    AGR_I   AGR_II  AGR_III   AGR_IV    AGR_V
-1 1.6734486 2.4782527 2.640687 3.467946 3.857052 4.642362 5.227541 5.349770
-2 3.4215372 2.3513897 3.933699 2.792848 2.228490 4.664547 3.088734 4.184185
-3 0.6733235 3.4289632 3.374175 6.840878 3.970233 3.357300 4.308526 4.597385
-4 1.6204695 0.7761912 1.483069 3.071837 2.596404 3.777269 2.117304 1.480058
-5 3.6727894 3.4477091 1.568137 2.988274 2.859141 3.391776 4.964074 4.672692
-6 1.7606578 4.8985834 3.178045 2.713753 3.539344 2.501292 4.822019 4.932111
-     CSN_I   CSN_II  CSN_III   CSN_IV    CSN_V    OPN_I   OPN_II  OPN_III
-1 2.631819 3.581923 4.512671 2.915904 1.504732 3.599976 3.732573 4.939267
-2 3.271494 3.211449 2.687601 4.239348 2.791344 4.514205 5.873897 4.002945
-3 1.866964 2.035981 4.263942 4.765430 2.966250 4.284590 3.746318 5.279031
-4 2.023762 4.152958 4.704842 2.467335 3.356945 3.369726 4.525216 4.083379
-5 2.704643 2.529358 4.765148 4.725093 4.231699 3.101060 4.352138 3.373412
-6 1.948576 2.148180 3.808945 2.210700 3.559796 1.834975 4.747015 2.811164
+<pre><code>     EXT_I   EXT_II      EXT_III    EXT_IV     EXT_V       EST_I   EST_II
+1 1.729460 1.219049  2.605158552 1.7807311 3.7543622  2.06873529 3.612132
+2 2.803747 3.174878  3.343353759 3.0112757 1.7482486  1.55975814 4.427559
+3 1.441186 3.209184  1.786015342 4.0370378 1.5758603  2.68565120 4.160730
+4 3.294189 1.981199  2.643269131 3.0257708 0.2911471 -0.02853025 3.262779
+5 4.263935 3.075879  4.401421651 4.9944088 4.6815562  2.09842462 3.615614
+6 1.939957 1.423364 -0.006763249 0.7578651 2.0400462  2.54012811 3.689426
+   EST_III   EST_IV    EST_V      AGR_I   AGR_II  AGR_III   AGR_IV    AGR_V
+1 2.668194 1.165049 4.948629 5.94553767 4.160523 4.631733 3.894066 5.206346
+2 1.105703 3.672551 3.572784 5.02791661 4.537551 3.903349 4.618360 4.096371
+3 3.082619 3.959489 3.973479 4.07787139 2.599666 4.771363 3.353832 4.779328
+4 1.226742 2.365739 2.020858 0.04628484 2.517879 3.732870 1.802230 2.796406
+5 1.837615 2.738580 2.325436 5.29752245 3.282334 4.488312 4.357178 5.288023
+6 3.227658 2.770014 3.962829 3.69352100 4.127243 4.763899 3.806744 1.526461
+     CSN_I    CSN_II  CSN_III   CSN_IV     CSN_V    OPN_I   OPN_II  OPN_III
+1 2.390902 0.6818347 3.199662 2.084504 1.8604609 6.426272 4.766129 4.807876
+2 3.872852 3.8521621 3.850284 2.873527 1.3540196 3.665734 4.127128 4.128159
+3 4.408910 3.1189175 1.872607 5.539646 3.2275375 3.701788 4.726807 3.924097
+4 2.724972 2.8659908 4.195537 1.764913 2.5809250 2.697771 2.248182 2.425585
+5 4.300922 5.3083804 3.192889 4.831684 3.1537115 2.196771 2.886505 3.734792
+6 2.379365 1.7734643 3.739128 2.220374 0.7572287 4.289812 5.363979 5.202563
     OPN_IV    OPN_V
-1 3.964627 5.440333
-2 4.648781 4.483138
-3 4.093274 4.911475
-4 4.217064 2.966201
-5 3.720653 3.733345
-6 3.782929 2.067550</code></pre>
+1 5.071386 3.858334
+2 3.030855 4.735066
+3 3.316075 5.019016
+4 1.864425 2.502481
+5 4.078888 2.866428
+6 5.863740 4.232900</code></pre>
 </details>
 <p><br></p>
 </div>
-<div id="run-analysis-on-synthetic-data" class="section level1" number="7">
-<h1><span class="header-section-number">7</span> Run analysis on
+<div id="run-analysis-on-synthetic-data" class="section level1" number="8">
+<h1><span class="header-section-number">8</span> Run analysis on
 synthetic data</h1>
 <p>Here, we run (confirmatory) factor analysis on the synthesized Big5
-personality data. Later on, we run the same analysis on the original
-data and compare the results to see if both data sets lead to more or
-less the same conclusion.</p>
+personality data. We run the same analysis on the original data and
+compare the results to see if they lead to more or less the same
+conclusion.</p>
 <pre class="r"><code>## lavaan model formulae
 CFA_model &lt;- &#39;
 EXTRA =~ EXT_I + EXT_II + EXT_III + EXT_IV + EXT_V 
@@ -3631,51 +3667,51 @@ syn_CFA &lt;- cfa(model = CFA_model, data = syndat, std.lv=TRUE)
 ## assess the fit indices
 fitMeasures(syn_CFA, fit.measures = c(&quot;cfi&quot;,&quot;srmr&quot;, &quot;rmsea&quot;))</code></pre>
 <pre><code>  cfi  srmr rmsea 
-0.814 0.066 0.066 </code></pre>
+0.812 0.066 0.066 </code></pre>
 <details>
 <summary>
 <strong><em>Check the CFA (on synthetic data) results in
 detail.</em></strong>
 </summary>
-<pre><code>lavaan 0.6-10 ended normally after 18 iterations
+<pre><code>lavaan 0.6-12 ended normally after 19 iterations
 
   Estimator                                         ML
   Optimization method                           NLMINB
   Number of model parameters                        60
-                                                      
+
   Number of observations                        100000
-                                                      
+
 Model Test User Model:
                                                         
-  Test statistic                              116119.353
+  Test statistic                              116893.070
   Degrees of freedom                                 265
   P-value (Chi-square)                             0.000
 
 Model Test Baseline Model:
 
-  Test statistic                            621511.331
+  Test statistic                            620663.953
   Degrees of freedom                               300
   P-value                                        0.000
 
 User Model versus Baseline Model:
 
-  Comparative Fit Index (CFI)                    0.814
-  Tucker-Lewis Index (TLI)                       0.789
+  Comparative Fit Index (CFI)                    0.812
+  Tucker-Lewis Index (TLI)                       0.787
 
 Loglikelihood and Information Criteria:
 
-  Loglikelihood user model (H0)           -3741122.237
-  Loglikelihood unrestricted model (H1)   -3683062.561
+  Loglikelihood user model (H0)           -3741416.610
+  Loglikelihood unrestricted model (H1)   -3682970.074
                                                       
-  Akaike (AIC)                             7482364.474
-  Bayesian (BIC)                           7482935.250
-  Sample-size adjusted Bayesian (BIC)      7482744.568
+  Akaike (AIC)                             7482953.219
+  Bayesian (BIC)                           7483523.995
+  Sample-size adjusted Bayesian (BIC)      7483333.313
 
 Root Mean Square Error of Approximation:
 
   RMSEA                                          0.066
   90 Percent confidence interval - lower         0.066
-  90 Percent confidence interval - upper         0.066
+  90 Percent confidence interval - upper         0.067
   P-value RMSEA &lt;= 0.05                          0.000
 
 Standardized Root Mean Square Residual:
@@ -3691,80 +3727,80 @@ Parameter Estimates:
 Latent Variables:
                    Estimate  Std.Err  z-value  P(&gt;|z|)   Std.lv  Std.all
   EXTRA =~                                                              
-    EXT_I             0.834    0.004  217.331    0.000    0.834    0.661
-    EXT_II            0.897    0.004  228.448    0.000    0.897    0.688
-    EXT_III           0.850    0.004  233.432    0.000    0.850    0.699
-    EXT_IV            0.860    0.004  239.547    0.000    0.860    0.713
-    EXT_V             0.948    0.004  253.350    0.000    0.948    0.744
+    EXT_I             0.837    0.004  217.474    0.000    0.837    0.661
+    EXT_II            0.909    0.004  231.612    0.000    0.909    0.694
+    EXT_III           0.854    0.004  235.003    0.000    0.854    0.702
+    EXT_IV            0.860    0.004  239.345    0.000    0.860    0.712
+    EXT_V             0.950    0.004  253.635    0.000    0.950    0.744
   AGREE =~                                                              
-    AGR_I             0.672    0.005  147.195    0.000    0.672    0.504
-    AGR_II            0.670    0.004  175.672    0.000    0.670    0.590
-    AGR_III           0.441    0.005   97.873    0.000    0.441    0.346
-    AGR_IV            0.786    0.004  212.431    0.000    0.786    0.699
-    AGR_V             0.794    0.004  207.928    0.000    0.794    0.685
+    AGR_I             0.669    0.005  146.831    0.000    0.669    0.503
+    AGR_II            0.673    0.004  176.594    0.000    0.673    0.593
+    AGR_III           0.418    0.004   92.948    0.000    0.418    0.330
+    AGR_IV            0.779    0.004  210.606    0.000    0.779    0.694
+    AGR_V             0.795    0.004  208.644    0.000    0.795    0.688
   EMO =~                                                                
-    EST_I             1.089    0.004  267.549    0.000    1.089    0.823
-    EST_II            0.723    0.004  182.633    0.000    0.723    0.589
-    EST_III           0.794    0.004  222.732    0.000    0.794    0.701
-    EST_IV            0.432    0.004  101.242    0.000    0.432    0.346
-    EST_V             0.565    0.004  134.522    0.000    0.565    0.450
+    EST_I             1.078    0.004  265.242    0.000    1.078    0.821
+    EST_II            0.714    0.004  180.408    0.000    0.714    0.584
+    EST_III           0.782    0.004  219.457    0.000    0.782    0.694
+    EST_IV            0.436    0.004  101.898    0.000    0.436    0.349
+    EST_V             0.564    0.004  133.766    0.000    0.564    0.449
   OPEN =~                                                               
-    OPN_I             0.534    0.004  129.960    0.000    0.534    0.461
-    OPN_II            0.801    0.004  207.381    0.000    0.801    0.728
-    OPN_III           0.435    0.004  110.774    0.000    0.435    0.397
-    OPN_IV            0.710    0.004  189.144    0.000    0.710    0.661
-    OPN_V             0.429    0.004  121.976    0.000    0.429    0.435
+    OPN_I             0.536    0.004  129.862    0.000    0.536    0.461
+    OPN_II            0.796    0.004  206.845    0.000    0.796    0.725
+    OPN_III           0.448    0.004  114.015    0.000    0.448    0.408
+    OPN_IV            0.708    0.004  187.916    0.000    0.708    0.656
+    OPN_V             0.439    0.004  124.442    0.000    0.439    0.443
   CON =~                                                                
-    CSN_I             0.685    0.004  167.865    0.000    0.685    0.582
-    CSN_II            0.805    0.005  169.407    0.000    0.805    0.587
-    CSN_III           0.355    0.004   93.907    0.000    0.355    0.340
-    CSN_IV            0.813    0.004  191.731    0.000    0.813    0.659
-    CSN_V             0.777    0.004  176.686    0.000    0.777    0.610
+    CSN_I             0.683    0.004  166.693    0.000    0.683    0.580
+    CSN_II            0.792    0.005  166.395    0.000    0.792    0.579
+    CSN_III           0.360    0.004   95.077    0.000    0.360    0.345
+    CSN_IV            0.806    0.004  189.159    0.000    0.806    0.653
+    CSN_V             0.779    0.004  177.112    0.000    0.779    0.614
 
 Covariances:
                    Estimate  Std.Err  z-value  P(&gt;|z|)   Std.lv  Std.all
   EXTRA ~~                                                              
-    AGREE             0.378    0.004  104.975    0.000    0.378    0.378
-    EMO               0.252    0.004   68.438    0.000    0.252    0.252
-    OPEN              0.128    0.004   31.762    0.000    0.128    0.128
-    CON               0.142    0.004   35.099    0.000    0.142    0.142
+    AGREE             0.391    0.004  109.493    0.000    0.391    0.391
+    EMO               0.245    0.004   66.100    0.000    0.245    0.245
+    OPEN              0.138    0.004   34.172    0.000    0.138    0.138
+    CON               0.141    0.004   34.829    0.000    0.141    0.141
   AGREE ~~                                                              
-    EMO              -0.070    0.004  -17.065    0.000   -0.070   -0.070
-    OPEN              0.189    0.004   44.879    0.000    0.189    0.189
-    CON               0.124    0.004   28.759    0.000    0.124    0.124
+    EMO              -0.070    0.004  -17.047    0.000   -0.070   -0.070
+    OPEN              0.188    0.004   44.541    0.000    0.188    0.188
+    CON               0.119    0.004   27.508    0.000    0.119    0.119
   EMO ~~                                                                
-    OPEN              0.177    0.004   43.482    0.000    0.177    0.177
-    CON               0.238    0.004   59.392    0.000    0.238    0.238
+    OPEN              0.180    0.004   44.233    0.000    0.180    0.180
+    CON               0.243    0.004   60.432    0.000    0.243    0.243
   OPEN ~~                                                               
-    CON               0.065    0.004   14.822    0.000    0.065    0.065
+    CON               0.075    0.004   17.077    0.000    0.075    0.075
 
 Variances:
                    Estimate  Std.Err  z-value  P(&gt;|z|)   Std.lv  Std.all
-   .EXT_I             0.894    0.005  188.879    0.000    0.894    0.562
-   .EXT_II            0.897    0.005  183.438    0.000    0.897    0.527
-   .EXT_III           0.754    0.004  180.725    0.000    0.754    0.511
-   .EXT_IV            0.714    0.004  177.135    0.000    0.714    0.491
-   .EXT_V             0.725    0.004  167.819    0.000    0.725    0.446
-   .AGR_I             1.325    0.007  198.075    0.000    1.325    0.746
-   .AGR_II            0.842    0.005  183.173    0.000    0.842    0.652
-   .AGR_III           1.425    0.007  213.532    0.000    1.425    0.880
-   .AGR_IV            0.647    0.004  150.169    0.000    0.647    0.512
-   .AGR_V             0.712    0.005  155.296    0.000    0.712    0.530
-   .EST_I             0.563    0.005  102.602    0.000    0.563    0.322
-   .EST_II            0.982    0.005  192.561    0.000    0.982    0.653
-   .EST_III           0.654    0.004  162.710    0.000    0.654    0.509
-   .EST_IV            1.371    0.006  216.115    0.000    1.371    0.880
-   .EST_V             1.259    0.006  209.387    0.000    1.259    0.797
-   .OPN_I             1.057    0.005  200.088    0.000    1.057    0.788
-   .OPN_II            0.570    0.005  121.729    0.000    0.570    0.470
-   .OPN_III           1.009    0.005  207.448    0.000    1.009    0.842
-   .OPN_IV            0.650    0.004  150.576    0.000    0.650    0.563
-   .OPN_V             0.792    0.004  203.403    0.000    0.792    0.811
-   .CSN_I             0.914    0.005  177.957    0.000    0.914    0.661
-   .CSN_II            1.232    0.007  176.743    0.000    1.232    0.655
-   .CSN_III           0.963    0.005  212.247    0.000    0.963    0.884
-   .CSN_IV            0.859    0.006  154.844    0.000    0.859    0.565
-   .CSN_V             1.016    0.006  170.526    0.000    1.016    0.627
+   .EXT_I             0.901    0.005  189.259    0.000    0.901    0.563
+   .EXT_II            0.886    0.005  182.290    0.000    0.886    0.518
+   .EXT_III           0.750    0.004  180.414    0.000    0.750    0.507
+   .EXT_IV            0.719    0.004  177.883    0.000    0.719    0.493
+   .EXT_V             0.728    0.004  168.388    0.000    0.728    0.446
+   .AGR_I             1.318    0.007  198.103    0.000    1.318    0.747
+   .AGR_II            0.838    0.005  182.359    0.000    0.838    0.649
+   .AGR_III           1.432    0.007  214.550    0.000    1.432    0.891
+   .AGR_IV            0.654    0.004  151.882    0.000    0.654    0.519
+   .AGR_V             0.704    0.005  154.114    0.000    0.704    0.527
+   .EST_I             0.561    0.005  102.260    0.000    0.561    0.325
+   .EST_II            0.982    0.005  192.679    0.000    0.982    0.658
+   .EST_III           0.658    0.004  163.758    0.000    0.658    0.518
+   .EST_IV            1.375    0.006  215.815    0.000    1.375    0.878
+   .EST_V             1.264    0.006  209.197    0.000    1.264    0.799
+   .OPN_I             1.067    0.005  199.990    0.000    1.067    0.788
+   .OPN_II            0.573    0.005  123.412    0.000    0.573    0.475
+   .OPN_III           1.002    0.005  206.237    0.000    1.002    0.833
+   .OPN_IV            0.664    0.004  152.597    0.000    0.664    0.570
+   .OPN_V             0.789    0.004  202.291    0.000    0.789    0.804
+   .CSN_I             0.919    0.005  177.834    0.000    0.919    0.663
+   .CSN_II            1.242    0.007  178.067    0.000    1.242    0.664
+   .CSN_III           0.958    0.005  211.716    0.000    0.958    0.881
+   .CSN_IV            0.873    0.006  156.147    0.000    0.873    0.574
+   .CSN_V             1.005    0.006  168.842    0.000    1.005    0.623
     EXTRA             1.000                               1.000    1.000
     AGREE             1.000                               1.000    1.000
     EMO               1.000                               1.000    1.000
@@ -3774,11 +3810,11 @@ Variances:
 <p><br></p>
 <pre class="r"><code>## plot the CFA model on synthetic data
 lavaanPlot(model = syn_CFA, node_options = list(shape = &quot;box&quot;, fontname = &quot;Helvetica&quot;), edge_options = list(color = &quot;grey&quot;), coefs = TRUE, graph_options = list(layout = &quot;circo&quot;))</code></pre>
-<div id="htmlwidget-041a4fa51fc16aee95b2" style="width:672px;height:480px;" class="grViz html-widget"></div>
-<script type="application/json" data-for="htmlwidget-041a4fa51fc16aee95b2">{"x":{"diagram":" digraph plot { \n graph [ layout = circo ] \n node [ shape = box, fontname = Helvetica ] \n node [shape = box] \n EXT_I; EXT_II; EXT_III; EXT_IV; EXT_V; AGR_I; AGR_II; AGR_III; AGR_IV; AGR_V; EST_I; EST_II; EST_III; EST_IV; EST_V; OPN_I; OPN_II; OPN_III; OPN_IV; OPN_V; CSN_I; CSN_II; CSN_III; CSN_IV; CSN_V \n node [shape = oval] \n EXTRA; AGREE; EMO; OPEN; CON \n \n edge [ color = grey ] \n  EXTRA->EXT_I [label = \"0.83\"] EXTRA->EXT_II [label = \"0.9\"] EXTRA->EXT_III [label = \"0.85\"] EXTRA->EXT_IV [label = \"0.86\"] EXTRA->EXT_V [label = \"0.95\"] AGREE->AGR_I [label = \"0.67\"] AGREE->AGR_II [label = \"0.67\"] AGREE->AGR_III [label = \"0.44\"] AGREE->AGR_IV [label = \"0.79\"] AGREE->AGR_V [label = \"0.79\"] EMO->EST_I [label = \"1.09\"] EMO->EST_II [label = \"0.72\"] EMO->EST_III [label = \"0.79\"] EMO->EST_IV [label = \"0.43\"] EMO->EST_V [label = \"0.57\"] OPEN->OPN_I [label = \"0.53\"] OPEN->OPN_II [label = \"0.8\"] OPEN->OPN_III [label = \"0.43\"] OPEN->OPN_IV [label = \"0.71\"] OPEN->OPN_V [label = \"0.43\"] CON->CSN_I [label = \"0.68\"] CON->CSN_II [label = \"0.81\"] CON->CSN_III [label = \"0.36\"] CON->CSN_IV [label = \"0.81\"] CON->CSN_V [label = \"0.78\"] \n}","config":{"engine":"dot","options":null}},"evals":[],"jsHooks":[]}</script>
+<div id="htmlwidget-20b3ee3eff80c38b5987" style="width:672px;height:480px;" class="grViz html-widget"></div>
+<script type="application/json" data-for="htmlwidget-20b3ee3eff80c38b5987">{"x":{"diagram":" digraph plot { \n graph [ layout = circo ] \n node [ shape = box, fontname = Helvetica ] \n node [shape = box] \n EXT_I; EXT_II; EXT_III; EXT_IV; EXT_V; AGR_I; AGR_II; AGR_III; AGR_IV; AGR_V; EST_I; EST_II; EST_III; EST_IV; EST_V; OPN_I; OPN_II; OPN_III; OPN_IV; OPN_V; CSN_I; CSN_II; CSN_III; CSN_IV; CSN_V \n node [shape = oval] \n EXTRA; AGREE; EMO; OPEN; CON \n \n edge [ color = grey ] \n  EXTRA->EXT_I [label = \"0.84\"] EXTRA->EXT_II [label = \"0.91\"] EXTRA->EXT_III [label = \"0.85\"] EXTRA->EXT_IV [label = \"0.86\"] EXTRA->EXT_V [label = \"0.95\"] AGREE->AGR_I [label = \"0.67\"] AGREE->AGR_II [label = \"0.67\"] AGREE->AGR_III [label = \"0.42\"] AGREE->AGR_IV [label = \"0.78\"] AGREE->AGR_V [label = \"0.8\"] EMO->EST_I [label = \"1.08\"] EMO->EST_II [label = \"0.71\"] EMO->EST_III [label = \"0.78\"] EMO->EST_IV [label = \"0.44\"] EMO->EST_V [label = \"0.56\"] OPEN->OPN_I [label = \"0.54\"] OPEN->OPN_II [label = \"0.8\"] OPEN->OPN_III [label = \"0.45\"] OPEN->OPN_IV [label = \"0.71\"] OPEN->OPN_V [label = \"0.44\"] CON->CSN_I [label = \"0.68\"] CON->CSN_II [label = \"0.79\"] CON->CSN_III [label = \"0.36\"] CON->CSN_IV [label = \"0.81\"] CON->CSN_V [label = \"0.78\"] \n}","config":{"engine":"dot","options":null}},"evals":[],"jsHooks":[]}</script>
 </div>
-<div id="run-analysis-on-original-data" class="section level1" number="8">
-<h1><span class="header-section-number">8</span> Run analysis on
+<div id="run-analysis-on-original-data" class="section level1" number="9">
+<h1><span class="header-section-number">9</span> Run analysis on
 original data</h1>
 <pre class="r"><code>## run CFA on original data
 original_CFA &lt;- cfa(model = CFA_model, data = big5, std.lv=TRUE)
@@ -3791,14 +3827,14 @@ fitMeasures(original_CFA, fit.measures = c(&quot;cfi&quot;,&quot;srmr&quot;, &qu
 <strong><em>Check the CFA (on original data) results in
 detail.</em></strong>
 </summary>
-<pre><code>lavaan 0.6-10 ended normally after 19 iterations
+<pre><code>lavaan 0.6-12 ended normally after 19 iterations
 
   Estimator                                         ML
   Optimization method                           NLMINB
   Number of model parameters                        60
-                                                      
+
   Number of observations                        100000
-                                                      
+
 Model Test User Model:
                                                         
   Test statistic                              116396.465
@@ -3928,8 +3964,8 @@ Variances:
 <p><br></p>
 <pre class="r"><code>## plot the CFA model on original data
 lavaanPlot(model = original_CFA, node_options = list(shape = &quot;box&quot;, fontname = &quot;Helvetica&quot;), edge_options = list(color = &quot;grey&quot;), coefs = TRUE, graph_options = list(layout = &quot;circo&quot;))</code></pre>
-<div id="htmlwidget-040ce9e43bfab99416cd" style="width:672px;height:480px;" class="grViz html-widget"></div>
-<script type="application/json" data-for="htmlwidget-040ce9e43bfab99416cd">{"x":{"diagram":" digraph plot { \n graph [ layout = circo ] \n node [ shape = box, fontname = Helvetica ] \n node [shape = box] \n EXT_I; EXT_II; EXT_III; EXT_IV; EXT_V; AGR_I; AGR_II; AGR_III; AGR_IV; AGR_V; EST_I; EST_II; EST_III; EST_IV; EST_V; OPN_I; OPN_II; OPN_III; OPN_IV; OPN_V; CSN_I; CSN_II; CSN_III; CSN_IV; CSN_V \n node [shape = oval] \n EXTRA; AGREE; EMO; OPEN; CON \n \n edge [ color = grey ] \n  EXTRA->EXT_I [label = \"0.84\"] EXTRA->EXT_II [label = \"0.9\"] EXTRA->EXT_III [label = \"0.85\"] EXTRA->EXT_IV [label = \"0.86\"] EXTRA->EXT_V [label = \"0.95\"] AGREE->AGR_I [label = \"0.67\"] AGREE->AGR_II [label = \"0.68\"] AGREE->AGR_III [label = \"0.43\"] AGREE->AGR_IV [label = \"0.79\"] AGREE->AGR_V [label = \"0.8\"] EMO->EST_I [label = \"1.08\"] EMO->EST_II [label = \"0.72\"] EMO->EST_III [label = \"0.78\"] EMO->EST_IV [label = \"0.44\"] EMO->EST_V [label = \"0.56\"] OPEN->OPN_I [label = \"0.53\"] OPEN->OPN_II [label = \"0.8\"] OPEN->OPN_III [label = \"0.45\"] OPEN->OPN_IV [label = \"0.7\"] OPEN->OPN_V [label = \"0.44\"] CON->CSN_I [label = \"0.69\"] CON->CSN_II [label = \"0.8\"] CON->CSN_III [label = \"0.36\"] CON->CSN_IV [label = \"0.81\"] CON->CSN_V [label = \"0.78\"] \n}","config":{"engine":"dot","options":null}},"evals":[],"jsHooks":[]}</script>
+<div id="htmlwidget-6a1fa9fa60a6db149ed9" style="width:672px;height:480px;" class="grViz html-widget"></div>
+<script type="application/json" data-for="htmlwidget-6a1fa9fa60a6db149ed9">{"x":{"diagram":" digraph plot { \n graph [ layout = circo ] \n node [ shape = box, fontname = Helvetica ] \n node [shape = box] \n EXT_I; EXT_II; EXT_III; EXT_IV; EXT_V; AGR_I; AGR_II; AGR_III; AGR_IV; AGR_V; EST_I; EST_II; EST_III; EST_IV; EST_V; OPN_I; OPN_II; OPN_III; OPN_IV; OPN_V; CSN_I; CSN_II; CSN_III; CSN_IV; CSN_V \n node [shape = oval] \n EXTRA; AGREE; EMO; OPEN; CON \n \n edge [ color = grey ] \n  EXTRA->EXT_I [label = \"0.84\"] EXTRA->EXT_II [label = \"0.9\"] EXTRA->EXT_III [label = \"0.85\"] EXTRA->EXT_IV [label = \"0.86\"] EXTRA->EXT_V [label = \"0.95\"] AGREE->AGR_I [label = \"0.67\"] AGREE->AGR_II [label = \"0.68\"] AGREE->AGR_III [label = \"0.43\"] AGREE->AGR_IV [label = \"0.79\"] AGREE->AGR_V [label = \"0.8\"] EMO->EST_I [label = \"1.08\"] EMO->EST_II [label = \"0.72\"] EMO->EST_III [label = \"0.78\"] EMO->EST_IV [label = \"0.44\"] EMO->EST_V [label = \"0.56\"] OPEN->OPN_I [label = \"0.53\"] OPEN->OPN_II [label = \"0.8\"] OPEN->OPN_III [label = \"0.45\"] OPEN->OPN_IV [label = \"0.7\"] OPEN->OPN_V [label = \"0.44\"] CON->CSN_I [label = \"0.69\"] CON->CSN_II [label = \"0.8\"] CON->CSN_III [label = \"0.36\"] CON->CSN_IV [label = \"0.81\"] CON->CSN_V [label = \"0.78\"] \n}","config":{"engine":"dot","options":null}},"evals":[],"jsHooks":[]}</script>
 <hr>
 <p>As seen above in the plots as well as in the table below, it is
 observed that the resulting estimates from the factor analysis on the
@@ -3978,7 +4014,7 @@ EXTRA =~ EXT_IV
 EXTRA =~ EXT_V
 </td>
 <td style="text-align:center;">
-0.948
+0.950
 </td>
 <td style="text-align:center;">
 0.953
@@ -3995,7 +4031,7 @@ EXTRA =~ EXT_V
 AGREE =~ AGR_IV
 </td>
 <td style="text-align:center;">
-0.786
+0.779
 </td>
 <td style="text-align:center;">
 0.787
@@ -4012,7 +4048,7 @@ AGREE =~ AGR_IV
 AGREE =~ AGR_V
 </td>
 <td style="text-align:center;">
-0.794
+0.795
 </td>
 <td style="text-align:center;">
 0.797
@@ -4029,7 +4065,7 @@ AGREE =~ AGR_V
 EMO =~ EST_IV
 </td>
 <td style="text-align:center;">
-0.432
+0.436
 </td>
 <td style="text-align:center;">
 0.439
@@ -4046,7 +4082,7 @@ EMO =~ EST_IV
 EMO =~ EST_V
 </td>
 <td style="text-align:center;">
-0.565
+0.564
 </td>
 <td style="text-align:center;">
 0.561
@@ -4063,7 +4099,7 @@ EMO =~ EST_V
 OPEN =~ OPN_IV
 </td>
 <td style="text-align:center;">
-0.710
+0.708
 </td>
 <td style="text-align:center;">
 0.702
@@ -4080,7 +4116,7 @@ OPEN =~ OPN_IV
 OPEN =~ OPN_V
 </td>
 <td style="text-align:center;">
-0.429
+0.439
 </td>
 <td style="text-align:center;">
 0.441
@@ -4097,7 +4133,7 @@ OPEN =~ OPN_V
 CON =~ CSN_IV
 </td>
 <td style="text-align:center;">
-0.813
+0.806
 </td>
 <td style="text-align:center;">
 0.808
@@ -4114,7 +4150,7 @@ CON =~ CSN_IV
 CON =~ CSN_V
 </td>
 <td style="text-align:center;">
-0.777
+0.779
 </td>
 <td style="text-align:center;">
 0.782
