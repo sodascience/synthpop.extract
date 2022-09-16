@@ -13,6 +13,7 @@ output:
     toc_float: yes
     number_sections: yes
     theme: lumen
+    #keep_md: true
 ---
 
 ```{r setup, include=FALSE}
@@ -20,6 +21,7 @@ knitr::opts_chunk$set(echo = TRUE,
                       message = FALSE, 
                       warning = FALSE, 
                       comment = NA)
+library(fontawesome)
 ```
 
 <div class="head">
@@ -32,16 +34,18 @@ analyses done using these microdatasets cannot easily be reproduced by others. I
 After creating your analysis on the CBS remote access (RA) environment, the general 
 procedure of the workflow is as follows:
 
-1.  Upload a code file we have prepared (`sythpop_extractor.R`) to the CBS RA environment.
-2.  Estimate a parametric generative model for the dataset using the well-known `synthpop` 
+1.  ![cbs](img/cbs-logo.png){width=22px} Upload a code file we have prepared (`sythpop_extractor.R`) to the CBS RA environment.
+2.  ![cbs](img/cbs-logo.png){width=22px} Estimate a parametric generative model for the dataset using the well-known `synthpop` 
     package in R.
-3.  Use our code to extract parameters of this generative model and ensure disclosure control according to 
+3.  ![cbs](img/cbs-logo.png){width=22px} Use our code to extract parameters of this generative model and ensure disclosure control according to 
     the [CBS output guidelines](https://www.cbs.nl/en-gb/our-services/customised-services-microdata/microdata-conducting-your-own-research/export-of-information).
-3.  Export the disclosure controlled parameters to an `xlsx` file.
-4.  Offer the `xlsx` file to the microdata team for output control.
-5.  Outside the CBS RA environment, download the `xlsx` file and load the parameters back in R.
-6.  Generate synthetic data based on the model parameters.
-7.  Run the original analysis on the synthetic data and report differences.
+3.  ![cbs](img/cbs-logo.png){width=22px} Export the disclosure controlled parameters to an `xlsx` file.
+4.  ![cbs](img/cbs-logo.png){width=22px} Offer the `xlsx` file to the microdata team for output control.
+5.  `r fa("computer", fill="#159cba")` Outside the CBS RA environment, download the `xlsx` file and load the parameters back in R.
+6.  `r fa("computer", fill="#158cba")` Generate synthetic data based on the model parameters.
+7.  `r fa("computer", fill="#158cba")` Run the original analysis on the synthetic data and report differences.
+
+<p class="note">![cbs](img/cbs-logo.png){width=17px}: perform in CBS RA environment &nbsp; `r fa("computer", fill="#158cba")` : perform in your local device</p>
 
 Below, we perform this procedure using an example analysis.
 </div>
@@ -70,7 +74,6 @@ library(lavaanPlot)
 
 
 <p class="data">The example dataset </p>
-
 For our example, we will be performing [factor analysis](https://en.wikipedia.org/wiki/Factor_analysis) for the big five personality traits. Note that this is merely an example analysis, which can be easily performed using public data; a CBS RA environment analysis will likely be different!
 
 We use data from [kaggle](https://www.kaggle.com/datasets/tunguz/big-five-personality-test)
@@ -145,12 +148,13 @@ Run the factor analysis on original data.
 ```{r}
 ## lavaan model formulae
 CFA_model <- '
-EXTRA =~ EXT_I + EXT_II + EXT_III + EXT_IV + EXT_V 
-AGREE =~ AGR_I + AGR_II + AGR_III + AGR_IV + AGR_V 
-EMO   =~ EST_I + EST_II + EST_III + EST_IV + EST_V 
-OPEN  =~ OPN_I + OPN_II + OPN_III + OPN_IV + OPN_V
-CON   =~ CSN_I + CSN_II + CSN_III + CSN_IV + CSN_V 
+EXTRA =~ EXT1 + EXT2 + EXT3 + EXT4 + EXT5 
+AGREE =~ AGR1 + AGR2 + AGR3 + AGR4 + AGR5 
+EMO   =~ EST1 + EST2 + EST3 + EST4 + EST5 
+OPEN  =~ OPN1 + OPN2 + OPN3 + OPN4 + OPN5
+CON   =~ CSN1 + CSN2 + CSN3 + CSN4 + CSN5 
 '
+
 ## run CFA on original data
 original_CFA <- cfa(model = CFA_model, data = big5, std.lv=TRUE)
 ## assess the fit indices
@@ -164,10 +168,17 @@ fitMeasures(original_CFA, fit.measures = c("cfi","srmr", "rmsea"))
 </details>
 <br>
 
-```{r}
+```{r, eval=FALSE}
 ## plot the CFA model on original data
 lavaanPlot(model = original_CFA, node_options = list(shape = "box", fontname = "Helvetica"), edge_options = list(color = "grey"), coefs = TRUE, graph_options = list(layout = "circo"))
 ```
+<details>
+  <summary>***See the plot of factor model.***</summary>
+```{r, echo=FALSE, eval=TRUE}
+lavaanPlot(model = original_CFA, node_options = list(shape = "box", fontname = "Helvetica"), edge_options = list(color = "grey"), coefs = TRUE, graph_options = list(layout = "circo"))
+```
+</details> 
+<br>
 
 # Estimate parametric generative model
 As the first step to generate synthetic data, we use the `synthpop` package to estimate a parametric model.
@@ -233,6 +244,14 @@ head(syndat)
 # Run analysis on synthetic data 
 We perform the same analysis (i.e., confirmatory factor analysis) on the synthesized data and compare the results to see if they lead to more or less the same conclusion.
 ```{r}
+## lavaan model formulae
+CFA_model <- '
+EXTRA =~ EXT_I + EXT_II + EXT_III + EXT_IV + EXT_V 
+AGREE =~ AGR_I + AGR_II + AGR_III + AGR_IV + AGR_V 
+EMO   =~ EST_I + EST_II + EST_III + EST_IV + EST_V 
+OPEN  =~ OPN_I + OPN_II + OPN_III + OPN_IV + OPN_V
+CON   =~ CSN_I + CSN_II + CSN_III + CSN_IV + CSN_V 
+'
 ## run CFA on synthetic data
 syn_CFA <- cfa(model = CFA_model, data = syndat, std.lv=TRUE)
 ## assess the fit indices
@@ -244,20 +263,25 @@ fitMeasures(syn_CFA, fit.measures = c("cfi","srmr", "rmsea"))
 summary(syn_CFA, fit.measures = TRUE, standardized = TRUE)
 ```
 </details>
-<br>
 
-```{r}
+```{r, eval=FALSE}
 ## plot the CFA model on synthetic data
 lavaanPlot(model = syn_CFA, node_options = list(shape = "box", fontname = "Helvetica"), edge_options = list(color = "grey"), coefs = TRUE, graph_options = list(layout = "circo"))
-
 ```
+
+<details>
+  <summary>***See the plot of factor model.***</summary>
+```{r, echo=FALSE, eval=TRUE}
+lavaanPlot(model = syn_CFA, node_options = list(shape = "box", fontname = "Helvetica"), edge_options = list(color = "grey"), coefs = TRUE, graph_options = list(layout = "circo"))
+```
+</details> 
 
 <hr>
 As seen below in the table, it is observed that the resulting estimates from the factor analysis on the synthetic data closely coincide with those from the analysis on the original data.
 
 ```{r echo=FALSE}
 original_est <- parameterEstimates(original_CFA) %>% 
-  filter(grepl('V', rhs) & op == '=~')  %>% 
+  filter(grepl('4|5', rhs) & op == '=~')  %>% 
   dplyr::select(est, se) %>% 
   rename(Original_estimate = est, Original_se = se)
 
