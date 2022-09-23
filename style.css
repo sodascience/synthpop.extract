@@ -23,6 +23,18 @@
  font-size: 17px;
 }
 
+.data{
+   font-size: 17px;
+   font-weight: bold;
+}
+
+.note{
+  font-size: 13px;
+  text-align: right;
+  font-style: italic;
+  padding-right: 3px;
+}
+
 /* Headers */
 h1{
   font-size: 18pt;
