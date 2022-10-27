@@ -2,7 +2,7 @@ library(synthpop)
 library(dplyr)
 library(magrittr)
 
-source("synthpop_extractor_polyr.R")
+source("synthpop_extractor.R")
 
 
 # data from synthpop package
@@ -34,10 +34,10 @@ par <- synp_read_sheets("try_polr1.xlsx")
 
 # generate synthetic data 
 syn_new <- synp_gen_syndat(par, n = nrow(ods))
+str(syn_new)
 
 # they are comparable!
 summary(syn_new); summary(synds$syn); summary(ods)
-
 
 
 ## ========================================
@@ -64,6 +64,7 @@ par2 <- synp_read_sheets("try_polr2.xlsx")
 
 # generate synthetic data 
 syn_new2 <- synp_gen_syndat(par2, n = nrow(ods2))
+str(syn_new2)
 
 # they are comparable!
 summary(syn_new2); summary(synds2$syn); summary(ods2)
