@@ -1,0 +1,31 @@
+Package: synthpop.extract
+Type: Package
+Title: Extract Models from SynthPop for Exporting
+Version: 0.1.0
+Authors@R: c(
+    person("Kyuri", "Park", email = "k.park@uu.nl", role = "aut"),
+    person("Erik-Jan", "van Kesteren", email = "e.vankesteren1@uu.nl", role =  c("aut", "cre")))
+Maintainer: The package maintainer <yourself@somewhere.net>
+Description: A light wrapper around the synthpop package to
+    generate synthetic data offsite (i.e., on a different computer)
+    through extracted parameters of parametric models.
+License: MIT + file LICENSE
+Encoding: UTF-8
+LazyData: true
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.2.2
+Depends: 
+    R (>= 2.10),
+    synthpop
+Imports: 
+    dplyr,
+    readxl,
+    glue,
+    stringr,
+    tidyr,
+    tidyselect,
+    writexl
+Suggests: 
+    rmarkdown,
+    knitr
+VignetteBuilder: knitr
