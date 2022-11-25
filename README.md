@@ -28,6 +28,10 @@ The package can be installed:
 
 -   `/examples` folder contains the tutorial (`getting_started.html`) and demo files.
 
+-  `getting_started.html` is the tutorial that shows the procedure of
+    generating synthetic dataset using the example dataset (`big5`).
+    For illustrative purposes, the results of factor analyses based on
+    the original dataset and synthetic dataset are compared.
 
 ## Contact
 
