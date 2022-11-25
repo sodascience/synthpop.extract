@@ -9,12 +9,23 @@ An object of class \code{tbl_df} (inherits from \code{tbl}, \code{data.frame}) w
 }
 \source{
 \url{https://www.kaggle.com/datasets/tunguz/big-five-personality-test}
+
+Check the codebook \url{https://www.kaggle.com/datasets/tunguz/big-five-personality-test} if you want to know each of the items in detail.
 }
 \usage{
 big5
 }
 \description{
 This data was pre-processed for this package specifically.
+}
+\details{
+\describe{
+\item{EXT}{Extraversion}
+\item{EST}{Emotional Stability}
+\item{AGR}{Agreeableness}
+\item{CSN}{Conscientiousness}
+\item{OPN}{Openness to new experiences}
+}
 }
 \seealso{
 \code{\link[=synp_get_param]{synp_get_param()}}
