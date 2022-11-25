@@ -6,6 +6,8 @@
 #' @return a data frame
 #'
 #' @importFrom stats as.formula coef model.matrix rbinom rmultinom rnorm runif sd
+#' @importFrom utils globalVariables
+#' @importFrom tidyselect where
 #' @export
 synp_gen_syndat <- function(par_list, n = 1000) {
   # extract name of used methods
@@ -135,6 +137,7 @@ synp_gen_syndat <- function(par_list, n = 1000) {
 
     # As synthpop models spit out the betas in such an order that factor variables come after the numerical variables... this seems to happen in `numtocat.syn` in the main `syn` function.
     if (all(c("factor", "numeric") %in% sapply(syndat, class))) { # in case there are only either factor or numeric variables, `relocate` throws an error
+      utils::globalVariables("where")
       syndat <- dplyr::relocate(syndat, tidyselect::where(is.factor), .after = tidyselect::where(is.numeric))
     }
   }

@@ -24,7 +24,8 @@ Imports:
     stringr,
     tidyr,
     tidyselect,
-    writexl
+    writexl,
+    utils
 Suggests: 
     rmarkdown,
     knitr
