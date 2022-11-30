@@ -1,7 +1,9 @@
 
 # Reproducible CBS datasets using the `synthpop.extract` package
 
-Our goal is to establish a procedure for exporting synthetic datasets
+[![R-CMD-check](https://github.com/sodascience/synthpop.extract/actions/workflows/r-cmd-check.yml/badge.svg)](https://github.com/sodascience/synthpop.extract/actions/workflows/r-cmd-check.yml)
+
+The goal of this package is to establish a procedure for exporting synthetic datasets
 based on real data at Statistics Netherlands
 ([CBS](https://www.cbs.nl/en-gb)).  
 This is a repository containing code that generates synthetic datasets
@@ -11,27 +13,22 @@ guiding how to utilize the package.
 
 ## Installation
 
-The package can be installed:
+The package can be installed using the `remotes` package:
 
-> library(devtools)
+```R
+remotes::install_github("sodascience/synthpop.extract")
+```
 
-> remotes::install.packages("sodascience/synthpop.extract")
+## Getting started
+You can find documentation on getting started with this package at the [`getting_started.md`](./examples/getting_started.md) file.That file is a tutorial that shows the procedure of generating synthetic datasets using the example dataset (`big5`). For illustrative purposes, the results of factor analyses based on the original dataset and synthetic dataset are compared.
 
-> library(synthpop.extract
+## Structure of the package
 
-## Description
+-   [`/R`](./R/) folder contains four R scripts. `data.R` describes the data included in the package, `extract_params.R` has a function that extracts model parameters to excel, `read_write.R` has functions that read in the excel sheets, load the parameters back in R, and `generate.R` has a function that generates synthetic datasets based on the parameters.
 
--   `/R` folder contains four R scripts. `data.R` describes the data included in the package, `extract_params.R` has a function that extracts
-    model parameters to excel, `read_write.R` has functions that read in the excel sheets, load the parameters back in R, and `generate.R` has a function that generates synthetic datasets based on the parameters.
+-   [`/data`](./data/) folder contains two `Birthweight.rda` and `big5.rda` data files.
 
--   `/data` folder contains two `Birthweight.rda` and `big5.rda` data files.
-
--   `/examples` folder contains the tutorial (`getting_started.html`) and demo files.
-
--  `getting_started.html` is the tutorial that shows the procedure of
-    generating synthetic dataset using the example dataset (`big5`).
-    For illustrative purposes, the results of factor analyses based on
-    the original dataset and synthetic dataset are compared.
+-   [`/examples`](./examples/) folder contains the tutorial (`getting_started.html`) and other demo files.
 
 ## Contact
 
