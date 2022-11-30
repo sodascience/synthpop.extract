@@ -15,7 +15,7 @@ LazyData: true
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.2.2
 Depends: 
-    R (>= 2.10),
+    R (>= 3.5.0),
     synthpop
 Imports: 
     dplyr,
@@ -24,8 +24,7 @@ Imports:
     stringr,
     tidyr,
     tidyselect,
-    writexl,
-    utils
+    writexl
 Suggests: 
     rmarkdown,
     knitr
