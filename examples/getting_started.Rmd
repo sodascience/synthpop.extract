@@ -3,9 +3,6 @@ title: "Reproducible science using Statistics Netherlands microdata"
 author: "Kyuri Park & Erik-Jan van Kesteren"
 date: "`r format(Sys.time(), '%B %d, %Y')`"
 output: 
-  # pdf_document
-  #   toc: yes
-  #   toc_depth: '3'
   html_document:
     css: style.css
     toc: yes
@@ -14,7 +11,7 @@ output:
     number_sections: yes
     highlight: tango
     theme: lumen
-    #keep_md: true
+    keep_md: true
 ---
 
 ```{r setup, include=FALSE}
@@ -40,11 +37,11 @@ procedure of the workflow is as follows:
     package in R.
 3.  ![cbs](../img/cbs-logo.png){width=22px} Extract parameters of this generative model and ensure disclosure control according to 
     the [CBS output guidelines](https://www.cbs.nl/en-gb/our-services/customised-services-microdata/microdata-conducting-your-own-research/export-of-information).
-3.  ![cbs](../img/cbs-logo.png){width=22px} Export the disclosure controlled parameters to an `xlsx` file.
-4.  ![cbs](../img/cbs-logo.png){width=22px} Offer the `xlsx` file to the microdata team for output control.
-5.  `r fa("computer", fill="#159cba")` Outside the CBS RA environment, download the `xlsx` file and load the parameters back in R.
-6.  `r fa("computer", fill="#158cba")` Generate synthetic data based on the model parameters.
-7.  `r fa("computer", fill="#158cba")` Run the original analysis on the synthetic data and report differences.
+4.  ![cbs](../img/cbs-logo.png){width=22px} Export the disclosure controlled parameters to an `xlsx` file.
+5.  ![cbs](../img/cbs-logo.png){width=22px} Offer the `xlsx` file to the microdata team for output control.
+6.  `r fa("computer", fill="#159cba")` Outside the CBS RA environment, download the `xlsx` file and load the parameters back in R.
+7.  `r fa("computer", fill="#158cba")` Generate synthetic data based on the model parameters.
+8.  `r fa("computer", fill="#158cba")` Run the original analysis on the synthetic data and report differences.
 
 <p class="note">![cbs](../img/cbs-logo.png){width=17px}: perform in CBS RA environment &nbsp; `r fa("computer", fill="#158cba")` : perform in your local device</p>
 
@@ -186,7 +183,7 @@ lavaanPlot(model = original_CFA, node_options = list(shape = "box", fontname = "
 # Estimate parametric generative model
 As the first step to generate synthetic data, we use the `synthpop` package to estimate a parametric model.
 
-We get the `synds` object using the `synthpop` package. We only support the methods `"norm"`(for continuous variables), `"logreg"`(for binary variables), `"polyreg"` (for unordered categorical variables), and `polr` (for ordered categorical variables). Make sure to set `models=TRUE` when calling the `syn` function.
+We get the `synds` object using the `synthpop` package. We only support the methods `"norm"`(for continuous variables), `"logreg"`(for binary variables), `"polyreg"` (for unordered categorical variables), and `"polr"` (for ordered categorical variables). Make sure to set `models=TRUE` when calling the `syn` function.
 
 ```{r, results='hide'}
 ## get the synds object
