@@ -1,46 +1,23 @@
----
-title: "Reproducible science using Statistics Netherlands microdata"
-date: 2022-12-07
-# post image
-image: "images/tutorial-2/tutorial2_header.png"
-# author
-author: "Erik-Jan van Kesteren & Kyuri Park"
-# post type (regular/featured)
-type: "featured"
-# meta description
-description: "This is meta description"
-# post draft
-draft: false
+After creating your dataset on your secure remote access (RA) environment, the general procedure of the `synthpop.extract` workflow is as follows:
 
-####################### Footer (always include on every page !!!) #########################
-footer:
-    image: "images/logos/odissei_logo.svg"
-    
----
-
-Through [ODISSEI](https://odissei-data.nl), researchers can get access to the microdata 
-of the Dutch national statistical agency Statistics Netherlands (CBS). This access is
-highly restricted, ensuring privacy of the inhabitants of the Netherlands.  
-However, this restriction is at odds with reproducibility, a key open science research practice: 
-analyses done using these microdatasets cannot easily be reproduced by others. In this post, we describe a workflow to enhance the reproducibility of CBS microdata analyses by using _synthetic data_.
-
-After creating your analysis on the CBS remote access (RA) environment, the general 
-procedure of the workflow is as follows:
-
-1. {{< image src="images/tutorial-2/cbs-logo.png" alt="cbs" width="20px" command="fit">}} Install `synthpop.extract` package by `remotes::install.packages("sodascience/synthpop.extract")`.
-2. {{< image src="images/tutorial-2/cbs-logo.png" alt="cbs" width="20px" command="fit">}} Estimate a parametric generative model for the dataset using the well-known `synthpop` package in R.
-3. {{< image src="images/tutorial-2/cbs-logo.png" alt="cbs" width="20px" command="fit">}} Extract parameters of this generative model and ensure disclosure control according to the [CBS output guidelines](https://www.cbs.nl/en-gb/our-services/customised-services-microdata/microdata-conducting-your-own-research/export-of-information).
-4. {{< image src="images/tutorial-2/cbs-logo.png" alt="cbs" width="20px" command="fit">}} Export the disclosure controlled parameters to an `xlsx` file.
-5. {{< image src="images/tutorial-2/cbs-logo.png" alt="cbs" width="20px" command="fit">}} Offer the `xlsx` file to the microdata team for output control.
-6. {{< image src="images/tutorial-2/computer.svg" alt="computer" fill="#159cba" width="20px" command="fit">}} Outside the CBS RA environment, download the `xlsx` file and load the parameters back in R.
-7. {{< image src="images/tutorial-2/computer.svg" alt="computer" fill="#159cba" width="20px" command="fit">}} Generate synthetic data based on the model parameters.
-8. {{< image src="images/tutorial-2/computer.svg" alt="computer" fill="#159cba" width="20px" command="fit">}} Run the original analysis on the synthetic data and report differences.
-
-<p class="note" style= "text-align: right">{{< image src="images/tutorial-2/cbs-logo.png" alt="cbs" width="20px" command="fit">}}: perform in CBS RA environment &nbsp; {{< image src="images/tutorial-2/computer.svg" alt="computer" fill="#159cba" width="20px" command="fit">}}: perform in your local device</p>
+> __Preparation__
+> 
+> 1. Install [`synthpop.extract`](https://github.com/sodascience/synthpop.extract) on the RA environment by uploading the code folder and installing the package from the folder. The folder can be downloaded from [here](https://github.com/sodascience/synthpop.extract/archive/refs/heads/main.zip).
+>
+> __On the CBS RA environment:__
+>
+> 2. Estimate a parametric generative model for the dataset using the well-known `synthpop` package in R.
+> 3. Extract parameters of this generative model and ensure disclosure control according to the [CBS output guidelines](https://www.cbs.nl/en-gb/our-services/customised-services-microdata/microdata-conducting-your-own-research/export-of-information) using `synthpop.extract`.
+> 4. Export the disclosure controlled parameters to an `xlsx` file using `synthpop.extract`.
+> 5. Offer the `xlsx` file to the microdata team for output control.
+> 
+> __Then, outside the CBS RA environment:__
+> 
+> 6. Download the `xlsx` file and load the parameters back in R using `synthpop.extract`.
+> 7. Generate synthetic data based on the model parameters using `synthpop.extract`.
+> 8. Run the original analysis on the synthetic data and report differences.
 
 Below, we perform this procedure using an example analysis.
-
-<hr>
 
 #### Preparation
 
@@ -48,8 +25,8 @@ Install the `synthpop.extract` package using the following code.
 
 ```R
 ## load synthpop.extractor packages
-#remotes::install.packages("sodascience/synthpop.extract")
-library("synthpop.extract")
+# remotes::install.packages("sodascience/synthpop.extract")
+library(synthpop.extract)
 
 ## packages needed for this example analysis
 library(tidyverse)
@@ -57,7 +34,7 @@ library(skimr)
 library(lavaan)
 library(lavaanPlot)
 ```
-<hr>
+
 
 #### Example dataset
 
@@ -76,8 +53,6 @@ data(big5)
 
 For the detailed description of the data, please check the help file
 (e.g., `?big5`).
-
-
 
 <details>
 <summary>
@@ -630,11 +605,11 @@ edge_options = list(color = "grey"), coefs = TRUE, graph_options = list(layout =
 
 <summary><strong>See the plot of factor model.</strong></summary>
 
-{{< image src="images/tutorial-2/CFA_originaldata.png" alt="CFA_originaldata" height="794" width="1287" position="center" command="fit" option="q100" class="img-fluid" title="image title" >}}
+{{< image src="images/tutorial-3/CFA_originaldata.png" alt="CFA_originaldata" height="794" width="1287" position="center" command="fit" option="q100" class="img-fluid" title="image title" >}}
 
 </details>
 
-<hr>
+
 
 #### Estimate parametric generative model
 
@@ -652,7 +627,7 @@ variables), `"polyreg"` (for unordered categorical variables), and
 synds <- syn(big5, method="norm", models=TRUE)
 ```
 
-<hr>
+
 
 #### Extract parameters
 
@@ -667,7 +642,7 @@ guidelines](https://www.cbs.nl/en-gb/our-services/customised-services-microdata/
 model_par <- synp_get_param(big5, synds)
 ```
 
-<hr>
+
 
 #### Save to Excel
 
@@ -678,7 +653,7 @@ We export the disclosure controlled parameters to an `xlsx` file using
 ## export to Excel
 synp_write_sheets(model_par, "big5.xlsx")
 ```
-<hr>
+
 
 #### Export from CBS
 
@@ -686,7 +661,7 @@ We offer the `xlsx` file to the microdata team for output control. When
 permitted, we export the `xlsx` file from the CBS environment through
 the regular output check and store it on our local device.
 
-<hr>
+
 
 #### Read `xlsx` file into R
 Outside the CBS RA environment, download the `xlsx` file and load the
@@ -697,7 +672,7 @@ parameters back in R using `synp_read_sheets` function:
 ## read in the parameters
 parameters <- synp_read_sheets("big5.xlsx")
 ```
-<hr>
+
 
 #### Generate synthetic data
 
@@ -749,7 +724,7 @@ head(syndat)
 </font>
 </details>
 
-<hr>
+
 
 #### Run analysis on synthetic data
 
@@ -920,12 +895,12 @@ lavaanPlot(model = syn_CFA, node_options = list(shape = "box",
 
 <summary><strong>See the plot of factor model.</strong></summary>
 
-{{< image src="images/tutorial-2/CFA_syndata.png" alt="CFA_syndata" height="794" width="1287" position="center" command="fit" option="q100" class="img-fluid" title="image title" >}}
+{{< image src="images/tutorial-3/CFA_syndata.png" alt="CFA_syndata" height="794" width="1287" position="center" command="fit" option="q100" class="img-fluid" title="image title" >}}
 
 </details>
 
 
-<hr>
+
 
 As seen below in the table, it is observed that the resulting estimates
 from the factor analysis on the synthetic data closely coincide with
