@@ -1,13 +1,11 @@
 
 # Reproducible CBS datasets using the `synthpop.extract` package
-
 [![R-CMD-check](https://github.com/sodascience/synthpop.extract/actions/workflows/r-cmd-check.yml/badge.svg)](https://github.com/sodascience/synthpop.extract/actions/workflows/r-cmd-check.yml)
 
 The goal of this package is to establish a procedure for exporting synthetic datasets based on real data at Statistics Netherlands
 ([CBS](https://www.cbs.nl/en-gb)). This is a repository containing code that generates synthetic datasets specialized to CBS datasets using [`synthpop.extract`](https://github.com/cran/synthpop) package and a tutorial guiding how to utilize the package.
 
 ## Installation
-
 The package can be installed using the `remotes` package:
 
 ```R
@@ -23,16 +21,7 @@ install.packages("C:/path/to/synthpop.extract", repos = NULL, type = "source")
 ## Getting started
 You can find documentation on getting started with this package on the SoDa team's website [`here`](https://odissei-soda.nl/tutorials/post-3/). 
 
-## Structure of the package
-
--   [`/R`](./R/) folder contains four R scripts. `data.R` describes the data included in the package, `extract_params.R` has a function that extracts model parameters to excel, `read_write.R` has functions that read in the excel sheets, load the parameters back in R, and `generate.R` has a function that generates synthetic datasets based on the parameters.
-
--   [`/data`](./data/) folder contains two `Birthweight.rda` and `big5.rda` data files.
-
--   [`/examples`](./examples/) folder contains the tutorial (`getting_started.html`) and other demo files.
-
 ## Contact
-
 This project is developed and maintained by the [ODISSEI Social Data
 Science (SoDa)](https://odissei-data.nl/nl/soda/) team.
 
