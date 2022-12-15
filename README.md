@@ -25,6 +25,6 @@ You can find documentation on getting started with this package on the SoDa team
 This project is developed and maintained by the [ODISSEI Social Data
 Science (SoDa)](https://odissei-data.nl/nl/soda/) team.
 
-<img src="soda_logo.png" alt="SoDa logo" width="250px"/>
+<img src="img/soda_logo.png" alt="SoDa logo" width="250px"/>
 
 Do you have questions, suggestions, or remarks? File an issue in the issue tracker or feel free to contact the team via https://odissei-soda.nl.
