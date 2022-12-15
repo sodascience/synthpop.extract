@@ -4,14 +4,14 @@ After creating your dataset on your secure remote access (RA) environment, the g
 > 
 > 1. Install [`synthpop.extract`](https://github.com/sodascience/synthpop.extract) on the RA environment by uploading the code folder and installing the package from the folder. The folder can be downloaded from [here](https://github.com/sodascience/synthpop.extract/archive/refs/heads/main.zip).
 >
-> __On the CBS RA environment:__
+> __On the RA environment:__
 >
 > 2. Estimate a parametric generative model for the dataset using the well-known `synthpop` package in R.
 > 3. Extract parameters of this generative model and ensure disclosure control according to the [CBS output guidelines](https://www.cbs.nl/en-gb/our-services/customised-services-microdata/microdata-conducting-your-own-research/export-of-information) using `synthpop.extract`.
 > 4. Export the disclosure controlled parameters to an `xlsx` file using `synthpop.extract`.
 > 5. Offer the `xlsx` file to the microdata team for output control.
 > 
-> __Then, outside the CBS RA environment:__
+> __Then, outside the RA environment:__
 > 
 > 6. Download the `xlsx` file and load the parameters back in R using `synthpop.extract`.
 > 7. Generate synthetic data based on the model parameters using `synthpop.extract`.
@@ -41,7 +41,7 @@ library(lavaanPlot)
 For our example, we will be performing [factor
 analysis](https://en.wikipedia.org/wiki/Factor_analysis) for the big
 five personality traits. Note that this is merely an example analysis,
-which can be easily performed using public data; a CBS RA environment
+which can be easily performed using public data; an RA environment
 analysis will likely be different!
 
 The example data `big5` is included in the `synthpop.extractor` package.
@@ -655,16 +655,16 @@ synp_write_sheets(model_par, "big5.xlsx")
 ```
 
 
-#### Export from CBS
+#### Export from RA
 
 We offer the `xlsx` file to the microdata team for output control. When
-permitted, we export the `xlsx` file from the CBS environment through
+permitted, we export the `xlsx` file from the RA environment through
 the regular output check and store it on our local device.
 
 
 
 #### Read `xlsx` file into R
-Outside the CBS RA environment, download the `xlsx` file and load the
+Outside the RA environment, download the `xlsx` file and load the
 parameters back in R using `synp_read_sheets` function:
 `synp_read_sheets(filepath)`.
 
