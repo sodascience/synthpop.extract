@@ -1,7 +1,9 @@
-
-# Reproducible CBS datasets using the `synthpop.extract` package
-[![R-CMD-check](https://github.com/sodascience/synthpop.extract/actions/workflows/r-cmd-check.yml/badge.svg)](https://github.com/sodascience/synthpop.extract/actions/workflows/r-cmd-check.yml)
-
+<h1 align="center">synthpop.extract</h4>
+<h4 align="center">Reproducible science using CBS microdata</h5>
+<p align="center">
+  <a href="https://github.com/sodascience/synthpop.extract/actions/workflows/r-cmd-check.yml"><img src="https://github.com/sodascience/synthpop.extract/actions/workflows/r-cmd-check.yml/badge.svg"></img></a>
+</p> 
+  
 The goal of this package is to establish a procedure for exporting synthetic datasets based on real data at Statistics Netherlands
 ([CBS](https://www.cbs.nl/en-gb)). This is a repository containing code that generates synthetic datasets specialized to CBS datasets using [`synthpop.extract`](https://github.com/cran/synthpop) package and a tutorial guiding how to utilize the package.
 
